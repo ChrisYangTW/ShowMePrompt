@@ -2,10 +2,6 @@
 A simple program for displaying image prompts.
 ![sample.png](examples/sample.png)
 
-## Executable
-For those using a Mac with an M-processor, you can find the executable file in the 'releases' section.
-[ShowMePrompt.app](https://github.com/ChrisYangTW/ShowMePrompt/releases/tag/v0.1.0)
-
 ## Installation
 Use the git clone command to clone the repository.
 ```
