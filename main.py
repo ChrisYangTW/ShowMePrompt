@@ -23,7 +23,7 @@ class MainWindow(QMainWindow):
 
         # Set up main_image_label(QLabel) drag and drop events
         # self.ui.main_image_label.mousePressEvent = lambda event: self.open_and_show_image()
-        self.ui.main_image_label.mousePressEvent = lambda event: self.show_image_use_preview(event)
+        # self.ui.main_image_label.mousePressEvent = lambda event: self.show_image_use_preview(event)
         self.ui.main_image_label.dragEnterEvent = lambda event: self.main_image_label_dragEnterEvent(event)
         self.ui.main_image_label.dropEvent = lambda event: self.main_image_label_dropEvent(event)
 
