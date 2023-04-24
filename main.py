@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 
 from PySide6.QtWidgets import QApplication, QMainWindow, QFileDialog, QLabel, QHBoxLayout
-from PySide6.QtGui import QPixmap, QDragEnterEvent, QDropEvent, QGuiApplication
+from PySide6.QtGui import QPixmap, QDragEnterEvent, QDropEvent, QGuiApplication, QKeyEvent
 from PySide6.QtCore import Qt, Slot
 
 from showmeprompt.ui_mainwindow_main_modify import Ui_MainWindow
@@ -43,8 +43,26 @@ class MainWindow(QMainWindow):
         self.file_path = Path('./fake_file_path')
         self.default_app = None
         self.current_image_raw_without_settings = ''
-        self.current_image_raw = 'image_info.raw'
+        self.current_image_raw = ''
         self.gallery_image_label_dict = {}
+        self._gallery_images_path = []
+        self._gallery_image_index_end = 1
+        self._gallery_image_index_pointer = 1
+
+    def keyPressEvent(self, event: QKeyEvent):
+        """
+        keyboard event, only works when self.gallery_image_label_dict is not empty
+        :param event:
+        :return:
+        """
+        if event.key() == Qt.Key_A and self.gallery_image_label_dict:
+            if self._gallery_image_index_pointer > 1:
+                file_path = self._gallery_images_path[self._gallery_images_path.index(self.file_path) - 1]
+                self.open_and_show_image(file_path)
+        elif event.key() == Qt.Key_S and self.gallery_image_label_dict:
+            if self._gallery_image_index_pointer < self._gallery_image_index_end:
+                file_path = self._gallery_images_path[self._gallery_images_path.index(self.file_path) + 1]
+                self.open_and_show_image(file_path)
 
     def main_image_label_dragEnterEvent(self, event: QDragEnterEvent):
         """
@@ -85,14 +103,12 @@ class MainWindow(QMainWindow):
                 self.file_path = Path(selected_file_path)
         else:
             self.file_path = file_path
-
         file_folder_path = self.file_path.parent
         # Updates the gallery if the opened folder has been changed.
         if file_folder_path != self.open_folder_path_last:
             self.gallery(file_folder_path)
             # for opening files from the last accessed directory
             self.open_folder_path_last = file_folder_path
-
         # To read an image file and display it on the image_label (QLabel)
         pixmap = QPixmap(self.file_path)
         self.ui.main_image_label.setPixmap(pixmap.scaled(self.ui.main_image_label.size(),
@@ -101,6 +117,8 @@ class MainWindow(QMainWindow):
 
         if not self.ui.open_with_default_button.isEnabled() and sys.platform == 'darwin':
             self.ui.open_with_default_button.setEnabled(True)
+
+        self._gallery_image_index_pointer = self.gallery_image_label_dict[f'{self.file_path.name}'][2]
 
         # To read the information of an image and display it in the corresponding QTextBrowser
         self.show_info_to_text_browser(self.file_path)
@@ -140,21 +158,30 @@ class MainWindow(QMainWindow):
         except Exception as e:
             print(e)
 
-        gallery_images_path = [file for file in open_folder_path.glob('*')
-                               if file.suffix.lower() in ['.png', '.jpg', '.jpeg', '.webp']]
+        self._gallery_images_path = sorted([file for file in open_folder_path.glob('*')
+                                           if file.suffix.lower() in ['.png', '.jpg', '.jpeg', '.webp']])
+        self._gallery_image_index_end = len(self._gallery_images_path)
 
         # Use a QLabel to display each image in the scrollAreaWidgetContents_layout,
         # with each image having its own label and bound to a click event.
-        for i, image_path in enumerate(gallery_images_path):
+        for i, image_path in enumerate(self._gallery_images_path):
             pixmap = QPixmap(image_path)
             if pixmap.isNull():
                 continue
             label = QLabel()
             label.setPixmap(pixmap.scaledToHeight(95, Qt.SmoothTransformation))
             label.mousePressEvent = lambda event, path=image_path: self.open_and_show_image(path)
-            self.gallery_image_label_dict[f'label{i+1}'] = [label, image_path]
-            self.scrollAreaWidgetContents_layout.addWidget(self.gallery_image_label_dict.get(f'label{i+1}')[0])
-            # todo: The current use of a dict may seem redundant, but the main purpose is to allow for future expansion.
+            self.gallery_image_label_dict[f'{image_path.name}'] = [label, image_path, i+1]
+            self.scrollAreaWidgetContents_layout.addWidget(self.gallery_image_label_dict.get(f'{image_path.name}')[0])
+
+        # Update self._gallery_image_index_pointer for user clicked refresh button
+        try:
+            self._gallery_image_index_pointer = self.gallery_image_label_dict[f'{self.file_path.name}'][2]
+        except KeyError as e:
+            print(f'file {e} is deleted, move to first image')
+            first_file_path = next(iter(self.gallery_image_label_dict.values()))[1]
+            self.open_and_show_image(first_file_path)
+
 
     def copy_raw_without_settings(self):
         clipboard = QGuiApplication.clipboard()
