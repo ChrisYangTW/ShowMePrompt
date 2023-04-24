@@ -75,6 +75,8 @@ class ImageInformation:
 
     @property
     def positive(self) -> str:
+        if not self._positive and not self._negative and not self._settings:
+            return '*** No Prompt information ***'
         return self._positive
 
     @property

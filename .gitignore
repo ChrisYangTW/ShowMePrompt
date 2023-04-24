@@ -161,7 +161,7 @@ cython_debug/
 #.idea/
 
 example/
+try_code/
 test_gallery.py
 test_thread.py
 config.txt
-setup.py
