@@ -30,11 +30,9 @@ Just use py2app or py2exe to convert it into an executable file for Mac or Windo
   * You can click on an image in the gallery section
   * Also, you can use the 'a' or 's' keys on your keyboard to select an image.
 * Clicking on the 'Refresh' icon will update the content in the gallery.
-  * Only click 'Refresh' when there are changes made to the contents of the file folder.
-  * When an image is opened or dragged and dropped, the gallery will be automatically updated.
+  * Only need to manually click this button when images are added to the folder where the current image being viewed belongs to while using the program.
 * Others:
   * Since I don't have a Windows to test the default program for opening images, "Preview" will be disabled on Windows system.
-  * (Important note) Do not delete the currently viewed image during use to avoid unexpected errors. Will address this issue in the next update.
 
 ## Test environment
 ```

@@ -108,7 +108,7 @@
          <item>
           <widget class="QLabel" name="postive_label">
            <property name="text">
-            <string>Postive (P)</string>
+            <string>Positive</string>
            </property>
           </widget>
          </item>
@@ -118,7 +118,7 @@
          <item>
           <widget class="QLabel" name="negative_label">
            <property name="text">
-            <string>Negative (N)</string>
+            <string>Negative</string>
            </property>
           </widget>
          </item>
@@ -128,7 +128,7 @@
          <item>
           <widget class="QLabel" name="settings_label">
            <property name="text">
-            <string>Settings (S)</string>
+            <string>Settings</string>
            </property>
           </widget>
          </item>
@@ -140,7 +140,7 @@
            <item>
             <widget class="QPushButton" name="copy_without_settings_button">
              <property name="text">
-              <string>without (S)</string>
+              <string>without_S</string>
              </property>
             </widget>
            </item>

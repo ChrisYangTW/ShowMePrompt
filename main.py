@@ -2,7 +2,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from PySide6.QtWidgets import QApplication, QMainWindow, QFileDialog, QLabel, QGridLayout
+from PySide6.QtWidgets import QApplication, QMainWindow, QFileDialog, QLabel, QGridLayout, QMessageBox
 from PySide6.QtGui import QPixmap, QDragEnterEvent, QDropEvent, QGuiApplication, QKeyEvent
 from PySide6.QtCore import Qt, Slot
 
@@ -44,25 +44,25 @@ class MainWindow(QMainWindow):
         self.default_app = None
         self.current_image_raw_without_settings = ''
         self.current_image_raw = ''
-        self._gallery_image_label_dict = {}
-        self._gallery_images_file_path = []
+        self._gallery_image_labels_dict = {}
+        self._gallery_image_files_path_list = []
         self._gallery_image_index_end = 0
         self._gallery_image_index_pointer = 0
 
     def keyPressEvent(self, event: QKeyEvent):
         """
         keyboard event(for A and S), A/S controls selecting different images.
-        only works when self._gallery_image_label_dict is not empty
+        only works when self._gallery_image_labels_dict is not empty
         :param event:
         :return:
         """
-        if event.key() == Qt.Key_A and self._gallery_image_label_dict:
+        if event.key() == Qt.Key_A and self._gallery_image_labels_dict:
             if self._gallery_image_index_pointer > 0:
-                file_path = self._gallery_images_file_path[self._gallery_image_index_pointer - 1]
+                file_path = self._gallery_image_files_path_list[self._gallery_image_index_pointer - 1]
                 self.open_and_show_image(file_path)
-        elif event.key() == Qt.Key_S and self._gallery_image_label_dict:
+        elif event.key() == Qt.Key_S and self._gallery_image_labels_dict:
             if self._gallery_image_index_pointer < self._gallery_image_index_end:
-                file_path = self._gallery_images_file_path[self._gallery_image_index_pointer + 1]
+                file_path = self._gallery_image_files_path_list[self._gallery_image_index_pointer + 1]
                 self.open_and_show_image(file_path)
 
     def main_image_label_dragEnterEvent(self, event: QDragEnterEvent):
@@ -88,10 +88,11 @@ class MainWindow(QMainWindow):
         file_path = Path(url.toLocalFile())
         self.open_and_show_image(file_path)
 
-    def open_and_show_image(self, file_path: Path = None) -> None:
+    def open_and_show_image(self, file_path: Path = None, force: bool = False) -> None:
         """
         Open the image and display, including updating the gallery and the index pointer
         :param file_path:
+        :param force: set True to update gallery no matter what
         :return:
         """
         # If opened through the open button, there will be no file_path parameter
@@ -104,12 +105,14 @@ class MainWindow(QMainWindow):
                 self.current_file_path = Path(selected_file_path)
         else:
             self.current_file_path = file_path
+            if not self.current_file_path.exists():
+                self.handle_image_or_folder_deletion()
+                return
 
         file_folder_path = self.current_file_path.parent
-        # Updating the gallery if the opened folder has been changed.
-        if file_folder_path != self.open_folder_path_last:
+        # Updating the gallery and self.open_folder_path_last if the opened folder has been changed or force=True
+        if file_folder_path != self.open_folder_path_last or force:
             self.gallery(file_folder_path)
-            # For opening files from the last accessed directory
             self.open_folder_path_last = file_folder_path
 
         # To read an image file and display it, including showing prompts
@@ -121,22 +124,25 @@ class MainWindow(QMainWindow):
                                                          Qt.SmoothTransformation))
         self.show_info_to_text_browser(self.current_file_path)
 
-        # After successfully opening an image for the first time, enable preview and refresh buttons
+        # Updating self._gallery_image_index_pointer when the gallery does not need to refresh
+        self._gallery_image_index_pointer = self._gallery_image_files_path_list.index(self.current_file_path)
+
+        # Once an image is successfully opened, enable the preview and refresh buttons if they were previously disabled
         if not self.ui.open_with_default_button.isEnabled() and sys.platform == 'darwin':
             self.ui.open_with_default_button.setEnabled(True)
 
         if not self.ui.gallery_refresh_button.isEnabled():
             self.ui.gallery_refresh_button.setEnabled(True)
 
-        # Updating self._gallery_image_index_pointer when the gallery does not need to refresh
-        self._gallery_image_index_pointer = self._gallery_images_file_path.index(self.current_file_path)
-
     @Slot()
     def show_image_use_preview(self, event=None):
         """
         To open an image using the default program in Mac.
         """
-        # todo: Currently, I don't have a Win system at hand to test.
+        if not self.current_file_path.exists():
+            self.handle_image_or_folder_deletion()
+            return
+
         self.default_app = self.default_app or self.get_default_application()
         try:
             if not event:
@@ -147,21 +153,29 @@ class MainWindow(QMainWindow):
         except subprocess.CalledProcessError as e:
             print('Error:', e)
 
-    def gallery(self, open_folder_path: Path) -> None:
+    def gallery(self, open_folder_path: Path = None) -> None:
         # print('\033[4m' + '\033[92m' + 'Refresh gallery ...' + '\033[0m')
         """
-        This function is used to display the content of the gallery layout, including UI processing.
-        :param open_folder_path:
-        :return:None
+        To display the content of the gallery layout, including UI processing
+        But in any case, it will try to clear the content of self.scrollAreaWidgetContents_layout
+        :param open_folder_path: self.open_folder_path_last(if None)
+        :return: None
         """
+        if open_folder_path is None:
+            open_folder_path = self.open_folder_path_last
+
         # If there are widgets in the self.scrollAreaWidgetContents_layout(QGridLayout),
-        # remove them first and clear self._gallery_image_label_dict & self._gallery_images_file_path
-        try:
-            self.clear_layout_widgets(self.scrollAreaWidgetContents_layout)
-            self._gallery_image_label_dict.clear()
-            self._gallery_images_file_path.clear()
-        except Exception as e:
-            print(e)
+        # remove them first and clear self._gallery_image_labels_dict & self._gallery_image_files_path_list
+        self.clear_layout_widgets(self.scrollAreaWidgetContents_layout)
+        self._gallery_image_labels_dict.clear()
+        self._gallery_image_files_path_list.clear()
+
+        # When the currently viewed image or its containing folder is deleted and the user clicks the refresh button
+        # directly.
+        # (Since deleting the folder is equivalent to deleting the image, it is sufficient to check if the image exists)
+        if not self.current_file_path.exists():
+            self.handle_image_or_folder_deletion()
+            return
 
         images_file_path = sorted([file for file in open_folder_path.glob('*')
                                    if file.suffix.lower() in ['.png', '.jpg', '.jpeg', '.webp']])
@@ -175,22 +189,20 @@ class MainWindow(QMainWindow):
             label = QLabel()
             label.setPixmap(pixmap.scaledToHeight(100, Qt.SmoothTransformation))
             label.mousePressEvent = lambda event, path=image_path: self.open_and_show_image(path)
-            self._gallery_image_label_dict[f'{image_path.name}'] = [label, image_path, i]
+            self._gallery_image_labels_dict[f'{image_path.name}'] = [label, image_path, i]
             self.scrollAreaWidgetContents_layout.addWidget(label, 0, i)
-            self._gallery_images_file_path.append(image_path)
+            self._gallery_image_files_path_list.append(image_path)
 
-        if not self._gallery_images_file_path:  # if user delete all image
-            return self.renew_ui()
+        # Updating the self._gallery_image_index_end and self._gallery_image_index_pointer
+        self._gallery_image_index_end = len(self._gallery_image_files_path_list) - 1  # index is 0~
+        self._gallery_image_index_pointer = self._gallery_image_files_path_list.index(self.current_file_path)
 
-        self._gallery_image_index_end = len(self._gallery_images_file_path) - 1  # index is 0~
-
-        # Update self._gallery_image_index_pointer when user clicked refresh button
-        if self.current_file_path.exists():
-            self._gallery_image_index_pointer = self._gallery_images_file_path.index(self.current_file_path)
-        else:
-            print(f'{self.current_file_path} is deleted, move to first image.')
-            first_file_path = next(iter(self._gallery_image_label_dict.values()))[1]
-            self.open_and_show_image(first_file_path)
+        # if self.current_file_path.exists():
+        #     self._gallery_image_index_pointer = self._gallery_image_files_path_list.index(self.current_file_path)
+        # else:
+        #     print(f'{self.current_file_path} is deleted, move to first image.')
+        #     first_file_path = next(iter(self._gallery_image_labels_dict.values()))[1]
+        #     self.open_and_show_image(first_file_path)
 
     def copy_raw_without_settings(self):
         clipboard = QGuiApplication.clipboard()
@@ -258,13 +270,71 @@ class MainWindow(QMainWindow):
             if label is not None:
                 label.deleteLater()
 
+    def handle_image_or_folder_deletion(self) -> None:
+        """
+        Handle the scenario where the user deletes the image currently being viewed or the folder it belongs to
+        :return:None
+        """
+        if self.open_folder_path_last.exists():
+            files_list = sorted([file for file in self.open_folder_path_last.glob('*')
+                                 if file.suffix.lower() in ['.png', '.jpg', '.jpeg', '.webp']])
+            for file in files_list:
+                pixmap = QPixmap(file)
+                if not pixmap.isNull():
+                    print('do if statement')
+                    self.open_and_show_image(file_path=file, force=True)
+                    self.trigger_warning_dialog(situation='image_deletion')
+                    return
+
+            print('not do if statement')
+            self.renew_ui()
+            self.trigger_warning_dialog(situation='folder_empty')
+        else:
+            self.renew_ui()
+            self.open_folder_path_last = Path('.')
+            self.current_file_path = Path('./fake_file_path/file.png')
+            self.trigger_warning_dialog(situation='folder_deletion')
+
+    def trigger_warning_dialog(self, situation: str) -> None:
+        """
+        Display different QMessageBoxes based on different situations.
+        situation: 'image_deletion' | 'folder_empty' | 'folder_deletion'
+        :return:
+        """
+        match situation:
+            case 'image_deletion':
+                QMessageBox.warning(
+                    self,
+                    'Warning',
+                    'The image is deleted\nWill display the first image in the folder',
+                    QMessageBox.Ok,
+                    QMessageBox.Ok
+                )
+            case 'folder_empty':
+                QMessageBox.warning(
+                    self,
+                    'Warning',
+                    'The folder has no image',
+                    QMessageBox.Ok,
+                    QMessageBox.Ok
+                )
+            case 'folder_deletion':
+                QMessageBox.warning(
+                    self,
+                    'Warning',
+                    'The folder is deleted',
+                    QMessageBox.Ok,
+                    QMessageBox.Ok
+                )
+
     def renew_ui(self) -> None:
         """
-        Reset the UI to its initial state
+        Reset the UI to its initial state, but keep self.open_folder_path_last and self.current_file_path
         :return:
         """
         self.ui.gallery_refresh_button.setEnabled(False)
         self.ui.open_with_default_button.setEnabled(False)
+        self.clear_layout_widgets(self.scrollAreaWidgetContents_layout)
         self.ui.main_image_label.clear()
         self.ui.main_image_label.setText("Drop to open")
         self.ui.filename_text_browser.clear()

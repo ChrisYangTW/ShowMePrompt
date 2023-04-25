@@ -192,10 +192,10 @@ class Ui_MainWindow(object):
         self.main_image_label.setText(QCoreApplication.translate("MainWindow", u"Drop to open", None))
         self.gallery_refresh_button.setText("")
         self.groupBox.setTitle("")
-        self.postive_label.setText(QCoreApplication.translate("MainWindow", u"Postive (P)", None))
-        self.negative_label.setText(QCoreApplication.translate("MainWindow", u"Negative (N)", None))
-        self.settings_label.setText(QCoreApplication.translate("MainWindow", u"Settings (S)", None))
-        self.copy_without_settings_button.setText(QCoreApplication.translate("MainWindow", u"without (S)", None))
+        self.postive_label.setText(QCoreApplication.translate("MainWindow", u"Positive", None))
+        self.negative_label.setText(QCoreApplication.translate("MainWindow", u"Negative", None))
+        self.settings_label.setText(QCoreApplication.translate("MainWindow", u"Settings", None))
+        self.copy_without_settings_button.setText(QCoreApplication.translate("MainWindow", u"without_S", None))
         self.copy_raw_button.setText(QCoreApplication.translate("MainWindow", u"full", None))
     # retranslateUi
 
