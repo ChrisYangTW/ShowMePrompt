@@ -3,6 +3,7 @@ from pathlib import Path
 from PIL import Image
 import piexif
 from piexif import helper
+import re
 
 
 class ImageInformation:
@@ -38,7 +39,12 @@ class ImageInformation:
         """
         if self._raw:
             positive_index_end = self._raw.find('\nNegative prompt:')
-            negative_index_end = self._raw.find('\nSteps:')
+            # negative_index_end = self._raw.find('\nSteps:')
+            # for civital.com Copy Generation Data structure
+            if match_string := re.search(r'(\nSteps:)|(\nSize:)', self._raw):
+                negative_index_end = match_string.start()
+            else:
+                negative_index_end = -1
             if positive_index_end < 0 or negative_index_end < 0:
                 print('Prompt incomplete..')
             else:
@@ -76,7 +82,7 @@ class ImageInformation:
     @property
     def positive(self) -> str:
         if not self._positive and not self._negative and not self._settings:
-            return '*** No Prompt information ***'
+            return '*** No Prompt information or parsing failed ***\n'
         return self._positive
 
     @property
@@ -104,9 +110,9 @@ if __name__ == '__main__':
         # '4(real).jpg',
         # '5.png'
     ]:
-        path = Path(f'example/{path}')
+        path = Path(f'../example/{path}')
         img = ImageInformation(path)
-        print(img.raw)
-        print()
-        print(img.raw_without_settings)
-        print('-' * 10)
+        # print(img.raw)
+        # print()
+        # print(img.raw_without_settings)
+        # print('-' * 10)

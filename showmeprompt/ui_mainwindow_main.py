@@ -150,9 +150,20 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_3.addWidget(self.copy_raw_button)
 
+        self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+
+        self.horizontalLayout_3.addItem(self.horizontalSpacer)
+
+        self.edit_raw_button = QPushButton(self.groupBox)
+        self.edit_raw_button.setObjectName(u"edit_raw_button")
+
+        self.horizontalLayout_3.addWidget(self.edit_raw_button)
+
         self.horizontalLayout_3.setStretch(0, 4)
         self.horizontalLayout_3.setStretch(1, 1)
         self.horizontalLayout_3.setStretch(2, 4)
+        self.horizontalLayout_3.setStretch(3, 1)
+        self.horizontalLayout_3.setStretch(4, 4)
 
         self.verticalLayout_3.addLayout(self.horizontalLayout_3)
 
@@ -197,5 +208,6 @@ class Ui_MainWindow(object):
         self.settings_label.setText(QCoreApplication.translate("MainWindow", u"Settings", None))
         self.copy_without_settings_button.setText(QCoreApplication.translate("MainWindow", u"without_S", None))
         self.copy_raw_button.setText(QCoreApplication.translate("MainWindow", u"full", None))
+        self.edit_raw_button.setText(QCoreApplication.translate("MainWindow", u"edit", None))
     # retranslateUi
 

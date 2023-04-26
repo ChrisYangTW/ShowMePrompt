@@ -8,6 +8,7 @@ from PySide6.QtCore import Qt, Slot
 
 from showmeprompt.ui_mainwindow_main_modify import Ui_MainWindow
 from showmeprompt.get_image_exif import ImageInformation
+from showmeprompt.editor_window import EditRawWindow
 
 
 class MainWindow(QMainWindow):
@@ -31,13 +32,16 @@ class MainWindow(QMainWindow):
         self.ui.open_file_button.clicked.connect(self.open_and_show_image)
         self.ui.open_with_default_button.clicked.connect(self.show_image_use_preview)
         self.ui.gallery_refresh_button.clicked.connect(lambda: self.gallery(self.open_folder_path_last))
-        # Disable the open_with_default_button and gallery_refresh_button(as there are no image files to open initially)
+        # Disable the open_with_default_button, gallery_refresh_button,edit_raw_button
+        # (as there are no image files to open initially)
         self.ui.open_with_default_button.setEnabled(False)
         self.ui.gallery_refresh_button.setEnabled(False)
+        self.ui.edit_raw_button.setEnabled(False)
 
-        # Set up two copy buttons and connect them with the corresponding functions
+        # Set up two copy buttons and an edit button, and connect them to their corresponding functions
         self.ui.copy_without_settings_button.clicked.connect(self.copy_raw_without_settings)
         self.ui.copy_raw_button.clicked.connect(self.copy_raw)
+        self.ui.edit_raw_button.clicked.connect(self.edit_raw)
 
         self.open_folder_path_last = Path('.')
         self.current_file_path = Path('./fake_file_path/file.png')
@@ -123,16 +127,10 @@ class MainWindow(QMainWindow):
                                                          Qt.KeepAspectRatio,
                                                          Qt.SmoothTransformation))
         self.show_info_to_text_browser(self.current_file_path)
+        self.enable_buttons_when_open_image_success()
 
         # Updating self._gallery_image_index_pointer when the gallery does not need to refresh
         self._gallery_image_index_pointer = self._gallery_image_files_path_list.index(self.current_file_path)
-
-        # Once an image is successfully opened, enable the preview and refresh buttons if they were previously disabled
-        if not self.ui.open_with_default_button.isEnabled() and sys.platform == 'darwin':
-            self.ui.open_with_default_button.setEnabled(True)
-
-        if not self.ui.gallery_refresh_button.isEnabled():
-            self.ui.gallery_refresh_button.setEnabled(True)
 
     @Slot()
     def show_image_use_preview(self, event=None):
@@ -212,6 +210,17 @@ class MainWindow(QMainWindow):
         clipboard = QGuiApplication.clipboard()
         clipboard.setText(self.current_image_raw)
 
+    def edit_raw(self):
+        """
+        Pop up a QDialog window for modifying the prompts of the image
+        :return:
+        """
+        editor_window = EditRawWindow(file_path=self.current_file_path, image_raw=self.current_image_raw, parent=self)
+        editor_window.rewrite_image_raw_signal.connect(lambda: self.open_and_show_image(self.current_file_path))
+        # Only after this QDialog is closed, the main window can be used again
+        editor_window.setWindowModality(Qt.ApplicationModal)
+        editor_window.show()
+
     def show_info_to_text_browser(self, file_path: Path) -> None:
         """
         Reads the information of the image and displays the information in the corresponding text browser
@@ -231,6 +240,20 @@ class MainWindow(QMainWindow):
         self.ui.settings_text_browser.append(image_info.settings)
         self.current_image_raw_without_settings = image_info.raw_without_settings
         self.current_image_raw = image_info.raw
+
+    def enable_buttons_when_open_image_success(self) -> None:
+        """
+        Once an image is successfully opened, enable preview, refresh and edit buttons
+        :return:
+        """
+        if not self.ui.open_with_default_button.isEnabled() and sys.platform == 'darwin':
+            self.ui.open_with_default_button.setEnabled(True)
+
+        if not self.ui.gallery_refresh_button.isEnabled():
+            self.ui.gallery_refresh_button.setEnabled(True)
+
+        if not self.ui.edit_raw_button.isEnabled():
+            self.ui.edit_raw_button.setEnabled(True)
 
     @staticmethod
     def get_default_application() -> list | None:
@@ -334,6 +357,7 @@ class MainWindow(QMainWindow):
         """
         self.ui.gallery_refresh_button.setEnabled(False)
         self.ui.open_with_default_button.setEnabled(False)
+        self.ui.edit_raw_button.setEnabled(False)
         self.clear_layout_widgets(self.scrollAreaWidgetContents_layout)
         self.ui.main_image_label.clear()
         self.ui.main_image_label.setText("Drop to open")
@@ -347,6 +371,6 @@ if __name__ == "__main__":
     app = QApplication([])
     window = MainWindow()
     # Set the main window to a fixed size so that the user cannot resize it.
-    window.setFixedSize(1200, 760)
+    window.setFixedSize(1200, 800)
     window.show()
     sys.exit(app.exec())

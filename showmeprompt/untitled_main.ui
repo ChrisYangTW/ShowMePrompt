@@ -136,7 +136,7 @@
           <widget class="QTextBrowser" name="settings_text_browser"/>
          </item>
          <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="4,1,4">
+          <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="4,1,4,1,4">
            <item>
             <widget class="QPushButton" name="copy_without_settings_button">
              <property name="text">
@@ -161,6 +161,26 @@
             <widget class="QPushButton" name="copy_raw_button">
              <property name="text">
               <string>full</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <widget class="QPushButton" name="edit_raw_button">
+             <property name="text">
+              <string>edit</string>
              </property>
             </widget>
            </item>
