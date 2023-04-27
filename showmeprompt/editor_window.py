@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import piexif
+import piexif.helper
 from PIL import Image
 from PIL.PngImagePlugin import PngInfo
 from PySide6.QtCore import Signal
@@ -57,15 +59,17 @@ class EditRawWindow(QDialog):
                                       QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if result == QMessageBox.Yes:
             text = self.editor.toPlainText()
-            metadata = PngInfo()
-            metadata.add_text('parameters', text)
 
             with Image.open(self.file_path) as img:
                 if img.format == 'PNG':
+                    metadata = PngInfo()
+                    metadata.add_text('parameters', text)
                     img.save(self.file_path, pnginfo=metadata)
-                else:
-                    # todo: need to handle other image format
-                    print('not a png image')
+                else:  # Assuming main.py only supports *.png, *.jpg, *.jpeg, and *.webp files
+                    exif_dict = piexif.load((img.info['exif']))
+                    exif_dict['Exif'][piexif.ExifIFD.UserComment] = piexif.helper.UserComment.dump(text, 'unicode')
+                    exif_bytes = piexif.dump(exif_dict)
+                    img.save(self.file_path, exif=exif_bytes)
 
             self.rewrite_image_raw_signal.emit()
             self.done(0)

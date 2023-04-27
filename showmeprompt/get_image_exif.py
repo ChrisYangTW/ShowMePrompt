@@ -46,7 +46,7 @@ class ImageInformation:
             else:
                 negative_index_end = -1
             if positive_index_end < 0 or negative_index_end < 0:
-                print('Prompt incomplete..')
+                print(f'{self._filename} Prompt incomplete..')
             else:
                 self._raw_without_settings = self._raw[:negative_index_end]
                 self._positive = self._raw[:positive_index_end]
@@ -65,9 +65,9 @@ class ImageInformation:
             # then convert value in exif format to str
             self._raw = piexif.helper.UserComment.load(exif_dict['Exif'][piexif.ExifIFD.UserComment])
         except KeyError as e:
-            print('This image does not contain [UserComment] content.')
+            print(f'KeyError: {e}, {self._filename} does not contain [UserComment] content.')
         except ValueError as e:
-            print(e)
+            print(f'ValueError: {e} ({self._filename})')
         else:
             self.raw_format()
 
