@@ -1,7 +1,7 @@
 # Show Me Prompt
-A simple program for displaying image prompts.
+A simple program for displaying and editing image prompts.
 
-![sample.png](examples/sample.png)
+![sample.png](examples/sample1.png)
 
 ## Installation
 Use the git clone command to clone the repository.
@@ -30,7 +30,11 @@ Just use py2app or py2exe to convert it into an executable file for Mac or Windo
   * You can click on an image in the gallery section
   * Also, you can use the 'a' or 's' keys on your keyboard to select an image.
 * Clicking on the 'Refresh' icon will update the content in the gallery.
-  * Only need to manually click this button when images are added to the folder where the current image being viewed belongs to while using the program.
+  * Only need to manually click this button when images are added to the current folder.
+* Editable image prompts are allowed, but they must follow a specific format.
+  * Positive, Negative, and settings should be separated by an enter.(As shown in the figure below, make sure to separate these three paragraphs with an "enter" between them)
+  * ![editor](examples/editor.png)
+  * Just a heads up, this feature was developed because recently the images displayed on civitai.com often lack prompts, but the uploaded images have them. So you can simply click "Copy Generation Data" on civitai.com and paste it directly.
 * Others:
   * Since I don't have a Windows to test the default program for opening images, "Preview" will be disabled on Windows system.
 
