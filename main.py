@@ -4,7 +4,7 @@ from pathlib import Path
 
 from PySide6.QtWidgets import QApplication, QMainWindow, QFileDialog, QLabel, QGridLayout, QMessageBox
 from PySide6.QtGui import QPixmap, QDragEnterEvent, QDropEvent, QGuiApplication, QKeyEvent
-from PySide6.QtCore import Qt, Slot
+from PySide6.QtCore import Qt, Slot, QCoreApplication
 
 from showmeprompt.ui_mainwindow_main_modify import Ui_MainWindow
 from showmeprompt.get_image_exif import ImageInformation
@@ -48,25 +48,27 @@ class MainWindow(QMainWindow):
         self.default_app = None
         self.current_image_raw_without_settings = ''
         self.current_image_raw = ''
-        self._gallery_image_labels_dict = {}
-        self._gallery_image_files_path_list = []
+        self._gallery_image_label_dict = {}
+        self._gallery_image_file_path_list = []
         self._gallery_image_index_end = 0
         self._gallery_image_index_pointer = 0
+        self._highlight_label_last = None
+        self._gallery_image_label_axis_list = ()
 
     def keyPressEvent(self, event: QKeyEvent):
         """
         keyboard event(for A and S), A/S controls selecting different images.
-        only works when self._gallery_image_labels_dict is not empty
+        only works when self._gallery_image_label_dict is not empty
         :param event:
         :return:
         """
-        if event.key() == Qt.Key_A and self._gallery_image_labels_dict:
+        if event.key() == Qt.Key_A and self._gallery_image_label_dict:
             if self._gallery_image_index_pointer > 0:
-                file_path = self._gallery_image_files_path_list[self._gallery_image_index_pointer - 1]
+                file_path = self._gallery_image_file_path_list[self._gallery_image_index_pointer - 1]
                 self.open_and_show_image(file_path)
-        elif event.key() == Qt.Key_S and self._gallery_image_labels_dict:
+        elif event.key() == Qt.Key_S and self._gallery_image_label_dict:
             if self._gallery_image_index_pointer < self._gallery_image_index_end:
-                file_path = self._gallery_image_files_path_list[self._gallery_image_index_pointer + 1]
+                file_path = self._gallery_image_file_path_list[self._gallery_image_index_pointer + 1]
                 self.open_and_show_image(file_path)
 
     def main_image_label_dragEnterEvent(self, event: QDragEnterEvent):
@@ -130,7 +132,10 @@ class MainWindow(QMainWindow):
         self.enable_buttons_when_open_image_success()
 
         # Updating self._gallery_image_index_pointer when the gallery does not need to refresh
-        self._gallery_image_index_pointer = self._gallery_image_files_path_list.index(self.current_file_path)
+        self._gallery_image_index_pointer = self._gallery_image_file_path_list.index(self.current_file_path)
+
+        # Updating gallery highlight
+        self.gallery_image_highlight(image_name=self.current_file_path.name)
 
     @Slot()
     def show_image_use_preview(self, event=None):
@@ -152,21 +157,24 @@ class MainWindow(QMainWindow):
             print('Error:', e)
 
     def gallery(self, open_folder_path: Path = None) -> None:
-        # print('\033[4m' + '\033[92m' + 'Refresh gallery ...' + '\033[0m')
         """
         To display the content of the gallery layout, including UI processing
         But in any case, it will try to clear the content of self.scrollAreaWidgetContents_layout
         :param open_folder_path: self.open_folder_path_last(if None)
         :return: None
         """
+        # print('\033[4m' + '\033[92m' + 'Refresh gallery ...' + '\033[0m')
         if open_folder_path is None:
             open_folder_path = self.open_folder_path_last
 
         # If there are widgets in the self.scrollAreaWidgetContents_layout(QGridLayout),
-        # remove them first and clear self._gallery_image_labels_dict & self._gallery_image_files_path_list
+        # remove them first and clear self._gallery_image_label_dict, self._gallery_image_file_path_list,
+        # self._highlight_label_last(need to recycle the useless QLabel if exist)
         self.clear_layout_widgets(self.scrollAreaWidgetContents_layout)
-        self._gallery_image_labels_dict.clear()
-        self._gallery_image_files_path_list.clear()
+        self._gallery_image_label_dict.clear()
+        self._gallery_image_file_path_list.clear()
+        if self._highlight_label_last:
+            self._highlight_label_last = None
 
         # When the currently viewed image or its containing folder is deleted and the user clicks the refresh button
         # directly.
@@ -187,20 +195,44 @@ class MainWindow(QMainWindow):
             label = QLabel()
             label.setPixmap(pixmap.scaledToHeight(100, Qt.SmoothTransformation))
             label.mousePressEvent = lambda event, path=image_path: self.open_and_show_image(path)
-            self._gallery_image_labels_dict[f'{image_path.name}'] = [label, image_path, i]
+            self._gallery_image_label_dict[f'{image_path.name}'] = [label, image_path, i]
             self.scrollAreaWidgetContents_layout.addWidget(label, 0, i)
-            self._gallery_image_files_path_list.append(image_path)
+            self._gallery_image_file_path_list.append(image_path)
 
-        # Updating the self._gallery_image_index_end and self._gallery_image_index_pointer
-        self._gallery_image_index_end = len(self._gallery_image_files_path_list) - 1  # index is 0~
-        self._gallery_image_index_pointer = self._gallery_image_files_path_list.index(self.current_file_path)
+        # Updating the self._gallery_image_index_end, self._gallery_image_index_pointer
+        # and gallery_image_highlight
+        self._gallery_image_index_end = len(self._gallery_image_file_path_list) - 1  # index is 0~
+        self._gallery_image_index_pointer = self._gallery_image_file_path_list.index(self.current_file_path)
+        self.gallery_image_highlight(image_name=self.current_file_path.name)
 
-        # if self.current_file_path.exists():
-        #     self._gallery_image_index_pointer = self._gallery_image_files_path_list.index(self.current_file_path)
-        # else:
-        #     print(f'{self.current_file_path} is deleted, move to first image.')
-        #     first_file_path = next(iter(self._gallery_image_labels_dict.values()))[1]
-        #     self.open_and_show_image(first_file_path)
+    def gallery_image_highlight(self, image_name: str) -> None:
+        """
+        Add a red border to the selected image and adjust the ScrollBar position accordingly
+        :param image_name:
+        :return:
+        """
+        self.update_layout_and_get_coordinates()
+
+        if self._highlight_label_last:
+            self._highlight_label_last.setStyleSheet(None)
+
+        label = self._gallery_image_label_dict[image_name][0]
+        label.setStyleSheet("border: 1px solid red;")
+        self._highlight_label_last = label
+
+        # When there are more than two images, keep at least the first two images
+        index = max(self._gallery_image_index_pointer - 2, 0)
+        axis_x = self._gallery_image_label_axis_list[index]
+        self.ui.scrollArea.horizontalScrollBar().setValue(axis_x)
+
+    def update_layout_and_get_coordinates(self) -> None:
+        """
+        To get the self._gallery_image_label_axis_list.
+        :return:
+        """
+        QCoreApplication.processEvents()
+        self._gallery_image_label_axis_list = [label[0].pos().x() for label in self._gallery_image_label_dict.values()]
+        # print('\033[94m' + f'{self._gallery_image_label_axis_list= }' + '\033[0m')
 
     def copy_raw_without_settings(self):
         clipboard = QGuiApplication.clipboard()
@@ -304,12 +336,10 @@ class MainWindow(QMainWindow):
             for file in files_list:
                 pixmap = QPixmap(file)
                 if not pixmap.isNull():
-                    print('do if statement')
                     self.open_and_show_image(file_path=file, force=True)
                     self.trigger_warning_dialog(situation='image_deletion')
                     return
 
-            print('not do if statement')
             self.renew_ui()
             self.trigger_warning_dialog(situation='folder_empty')
         else:

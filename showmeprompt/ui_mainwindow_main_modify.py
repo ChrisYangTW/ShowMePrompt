@@ -104,35 +104,37 @@ class Ui_MainWindow(object):
         self.groupBox.setObjectName(u"groupBox")
         self.verticalLayout_3 = QVBoxLayout(self.groupBox)
         self.verticalLayout_3.setObjectName(u"verticalLayout_3")
+
         self.positive_label = QLabel(self.groupBox)
         self.positive_label.setObjectName(u"positive_label")
-
         self.verticalLayout_3.addWidget(self.positive_label)
 
         self.positive_text_browser = QTextBrowser(self.groupBox)
         self.positive_text_browser.setObjectName(u"positive_text_browser")
-
         self.verticalLayout_3.addWidget(self.positive_text_browser)
 
         self.negative_label = QLabel(self.groupBox)
         self.negative_label.setObjectName(u"negative_label")
-
         self.verticalLayout_3.addWidget(self.negative_label)
 
         self.negative_text_browser = QTextBrowser(self.groupBox)
         self.negative_text_browser.setObjectName(u"negative_text_browser")
-
         self.verticalLayout_3.addWidget(self.negative_text_browser)
 
         self.settings_label = QLabel(self.groupBox)
         self.settings_label.setObjectName(u"settings_label")
-
         self.verticalLayout_3.addWidget(self.settings_label)
 
         self.settings_text_browser = QTextBrowser(self.groupBox)
         self.settings_text_browser.setObjectName(u"settings_text_browser")
-
         self.verticalLayout_3.addWidget(self.settings_text_browser)
+
+        # modify: setup positive, negative, settings browsers font size
+        self.font = QFont()
+        self.font.setPointSize(16)
+        self.positive_text_browser.setFont(self.font)
+        self.negative_text_browser.setFont(self.font)
+        # self.settings_text_browser.setFont(self.font)
 
         self.horizontalLayout_3 = QHBoxLayout()
         self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
