@@ -5,8 +5,9 @@ due to unfamiliarity with setting parameters in Qt Designer.app
 
 from PySide6.QtCore import QCoreApplication, QMetaObject, QRect, QSize, Qt
 from PySide6.QtGui import QFont, QIcon
-from PySide6.QtWidgets import (QGroupBox, QHBoxLayout, QLabel,QMenuBar, QPushButton, QScrollArea,
-                               QSizePolicy, QSpacerItem, QStatusBar, QTextBrowser, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QGroupBox, QHBoxLayout, QLabel, QMenuBar, QPushButton, QScrollArea,
+                               QSizePolicy, QSpacerItem, QStatusBar, QTextBrowser, QVBoxLayout, QWidget, QStyle,
+                               QApplication)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -25,18 +26,16 @@ class Ui_MainWindow(object):
         self.horizontalLayout.setObjectName(u"horizontalLayout")
         self.open_file_button = QPushButton(self.centralwidget)
         self.open_file_button.setObjectName(u"open_file_button")
-        # modify
-        # set open_file_button, use the icon "openfolder.png"
-        self.open_file_button.setIcon(QIcon('icon/openfolder.png'))
+        # modify: setup open_file_button icon
+        self.open_file_button.setIcon(QApplication.style().standardIcon(QStyle.SP_DirOpenIcon))
         self.open_file_button.setIconSize(QSize(self.open_file_button.size()))
 
         self.horizontalLayout.addWidget(self.open_file_button)
 
         self.open_with_default_button = QPushButton(self.centralwidget)
         self.open_with_default_button.setObjectName(u"open_with_default_button")
-        # modify
-        # set open_with_default_button, use the icon "preview.png"
-        self.open_with_default_button.setIcon(QIcon('icon/preview.png'))
+        # modify: open_with_default_button icon
+        self.open_with_default_button.setIcon(QApplication.style().standardIcon(QStyle.SP_FileDialogListView))
         self.open_with_default_button.setIconSize(QSize(self.open_with_default_button.size()))
 
         self.horizontalLayout.addWidget(self.open_with_default_button)
@@ -50,8 +49,7 @@ class Ui_MainWindow(object):
         sizePolicy1.setVerticalStretch(0)
         sizePolicy1.setHeightForWidth(self.filename_text_browser.sizePolicy().hasHeightForWidth())
         self.filename_text_browser.setSizePolicy(sizePolicy1)
-        # modify
-        # Set the font
+        # modify: setup filename_text_browser font
         self.filename_text_browser.setFont(QFont('Arial', 18))
 
         self.verticalLayout.addWidget(self.filename_text_browser)
@@ -78,13 +76,12 @@ class Ui_MainWindow(object):
 
         self.gallery_refresh_button = QPushButton(self.centralwidget)
         self.gallery_refresh_button.setObjectName(u"gallery_refresh_button")
-        # modify
-        # Set the gallery_refresh_button to be transparent with no border.
-        # Fix the size to 50x50 and use the icon "refresh.png".
-        self.gallery_refresh_button.setFixedSize(50, 50)
+        # modify: setup gallery_refresh_button icon
+        self.gallery_refresh_button.setFixedSize(60, 60)
         self.gallery_refresh_button.setStyleSheet("QPushButton { background-color: transparent; border: none; }")
-        self.gallery_refresh_button.setIcon(QIcon('icon/refresh.png'))
-        self.gallery_refresh_button.setIconSize(QSize(50, 50))
+        self.gallery_refresh_button.setIconSize(QSize(60, 60))
+        self.gallery_refresh_button.setIcon(QApplication.style().standardIcon(QStyle.SP_BrowserReload))
+
 
         self.gallery_display_layout.addWidget(self.gallery_refresh_button)
 
@@ -140,9 +137,8 @@ class Ui_MainWindow(object):
         self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
         self.copy_without_settings_button = QPushButton(self.groupBox)
         self.copy_without_settings_button.setObjectName(u"copy_without_settings_button")
-        # modify
-        # set copy_without_settings_button, use the icon "copy.png"
-        self.copy_without_settings_button.setIcon(QIcon('icon/copy.png'))
+        # modify: setup copy_without_settings_button icon
+        self.copy_without_settings_button.setIcon(QApplication.style().standardIcon(QStyle.SP_FileDialogDetailedView))
         self.copy_without_settings_button.setMinimumWidth(50)
         self.copy_without_settings_button.setIconSize(self.copy_without_settings_button.size())
 
@@ -155,9 +151,8 @@ class Ui_MainWindow(object):
 
         self.copy_raw_button = QPushButton(self.groupBox)
         self.copy_raw_button.setObjectName(u"copy_raw_button")
-        # modify
-        # set copy_raw_button, use the icon "copy.png"
-        self.copy_raw_button.setIcon(QIcon('icon/copy.png'))
+        # modify: setup copy_raw_button icon
+        self.copy_raw_button.setIcon(QApplication.style().standardIcon(QStyle.SP_FileDialogDetailedView))
         self.copy_raw_button.setMinimumWidth(50)
         self.copy_raw_button.setIconSize(self.copy_raw_button.size())
 
@@ -169,9 +164,8 @@ class Ui_MainWindow(object):
 
         self.edit_raw_button = QPushButton(self.groupBox)
         self.edit_raw_button.setObjectName(u"edit_raw_button")
-        # todo: change icon
-        # set edit_raw_button, use the icon "copy.png"
-        self.edit_raw_button.setIcon(QIcon('icon/copy.png'))
+        # modify: setup edit_raw_button icon
+        self.edit_raw_button.setIcon(QApplication.style().standardIcon(QStyle.SP_FileDialogContentsView))
         self.edit_raw_button.setMinimumWidth(50)
         self.edit_raw_button.setIconSize(self.edit_raw_button.size())
 
@@ -224,6 +218,6 @@ class Ui_MainWindow(object):
         self.positive_label.setText(QCoreApplication.translate("MainWindow", u"Positive", None))
         self.negative_label.setText(QCoreApplication.translate("MainWindow", u"Negative", None))
         self.settings_label.setText(QCoreApplication.translate("MainWindow", u"Settings", None))
-        self.copy_without_settings_button.setText(QCoreApplication.translate("MainWindow", u"without_S", None))
-        self.copy_raw_button.setText(QCoreApplication.translate("MainWindow", u"full", None))
-        self.edit_raw_button.setText(QCoreApplication.translate("MainWindow", u"edit", None))
+        self.copy_without_settings_button.setText(QCoreApplication.translate("MainWindow", u"Without_S", None))
+        self.copy_raw_button.setText(QCoreApplication.translate("MainWindow", u"Full", None))
+        self.edit_raw_button.setText(QCoreApplication.translate("MainWindow", u"Edit", None))

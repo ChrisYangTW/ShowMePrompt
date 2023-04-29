@@ -1,7 +1,7 @@
 # Show Me Prompt
 A simple program for displaying and editing image prompts.
 
-![sample.png](examples/sample1.png)
+![sample.png](examples/sample2.png)
 
 ## Installation
 Use the git clone command to clone the repository.
@@ -19,7 +19,8 @@ python3 main.py
 ```
 
 ## Executable
-Just use py2app or py2exe to convert it into an executable file for Mac or Windows.
+You can use pyinstaller, py2app, py2exe to convert the code into an executable file that is compatible with the system.
+If you are using the Mac M-processor series, I have already converted it using pyinstaller and placed it in [release](https://github.com/ChrisYangTW/ShowMePrompt/releases).
 
 ## Usage
 ![usage](examples/usage.png)
@@ -46,20 +47,3 @@ Macbook Pro16 M1 (OS 13.3.1 (22E261))
 
 ## some
 This is a small program for viewing image prompts.The code has many comments and also provides the original layout file (untitled_main.ui), so you can modify the code based on your own needs.
-
-## Attribution
-about: openfolder.png  
-<a href="https://www.flaticon.com/free-icons/folder" title="folder icons">
-Folder icons created by Icongeek26 - Flaticon</a>
-
-about: preview.png  
-<a href="https://www.flaticon.com/free-icons/preview" title="preview icons">
-Preview icons created by manshagraphics - Flaticon</a>
-
-about: refresh.png  
-<a href="https://www.flaticon.com/free-icons/sync" title="sync icons">
-Sync icons created by SumberRejeki - Flaticon</a>
-
-about: copy.png  
-<a href="https://www.flaticon.com/free-icons/copy" title="copy icons">
-Copy icons created by Icongeek26 - Flaticon</a>

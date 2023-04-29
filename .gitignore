@@ -162,6 +162,5 @@ cython_debug/
 
 example/
 try_code/
-test_gallery.py
-test_thread.py
 config.txt
+main.spec
