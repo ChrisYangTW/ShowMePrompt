@@ -3,10 +3,10 @@ import sys
 from pathlib import Path
 
 from PySide6.QtWidgets import QApplication, QMainWindow, QFileDialog, QLabel, QGridLayout, QMessageBox
-from PySide6.QtGui import QPixmap, QDragEnterEvent, QDropEvent, QGuiApplication, QKeyEvent
+from PySide6.QtGui import QPixmap, QDragEnterEvent, QDropEvent, QGuiApplication, QKeyEvent, QTextCharFormat
 from PySide6.QtCore import Qt, Slot, QCoreApplication
 
-from showmeprompt.ui_mainwindow_main_modify import Ui_MainWindow
+from showmeprompt.untitled_main_test0429 import Ui_MainWindow
 from showmeprompt.get_image_exif import ImageInformation
 from showmeprompt.editor_window import EditRawWindow
 
@@ -22,6 +22,10 @@ class MainWindow(QMainWindow):
         self.scrollAreaWidgetContents_layout.setObjectName(u"scrollAreaWidgetContents_layout")
         self.ui.scrollAreaWidgetContents.setLayout(self.scrollAreaWidgetContents_layout)
 
+        # Set up option menu action and connect them with the corresponding functions
+        self.ui.actionFixedSize.triggered.connect(lambda: self.option_menu_trigger(fixed=True))
+        self.ui.actionUnFixedSize.triggered.connect(lambda: self.option_menu_trigger(fixed=False))
+
         # Set up main_image_label(QLabel) drag and drop events
         # self.ui.main_image_label.mousePressEvent = lambda event: self.open_and_show_image()
         # self.ui.main_image_label.mousePressEvent = lambda event: self.show_image_use_preview(event)
@@ -32,16 +36,16 @@ class MainWindow(QMainWindow):
         self.ui.open_file_button.clicked.connect(self.open_and_show_image)
         self.ui.open_with_default_button.clicked.connect(self.show_image_use_preview)
         self.ui.gallery_refresh_button.clicked.connect(lambda: self.gallery(self.open_folder_path_last))
-        # Disable the open_with_default_button, gallery_refresh_button,edit_raw_button
+        # Disable the open_with_default_button, gallery_refresh_button,edit_button
         # (as there are no image files to open initially)
         self.ui.open_with_default_button.setEnabled(False)
         self.ui.gallery_refresh_button.setEnabled(False)
-        self.ui.edit_raw_button.setEnabled(False)
+        self.ui.edit_button.setEnabled(False)
 
         # Set up two copy buttons and an edit button, and connect them to their corresponding functions
-        self.ui.copy_without_settings_button.clicked.connect(self.copy_raw_without_settings)
-        self.ui.copy_raw_button.clicked.connect(self.copy_raw)
-        self.ui.edit_raw_button.clicked.connect(self.edit_raw)
+        self.setup_copy_button()
+        self.ui.copy_combo_box.currentTextChanged.connect(self.copy_combox_selected)
+        self.ui.edit_button.clicked.connect(self.edit)
 
         self.open_folder_path_last = Path('.')
         self.current_file_path = Path('./fake_file_path/file.png')
@@ -211,7 +215,7 @@ class MainWindow(QMainWindow):
         :param image_name:
         :return:
         """
-        self.update_layout_and_get_coordinates()
+        self._gallery_image_label_axis_list = self.update_layout_and_get_coordinates()
 
         if self._highlight_label_last:
             self._highlight_label_last.setStyleSheet(None)
@@ -225,24 +229,24 @@ class MainWindow(QMainWindow):
         axis_x = self._gallery_image_label_axis_list[index]
         self.ui.scrollArea.horizontalScrollBar().setValue(axis_x)
 
-    def update_layout_and_get_coordinates(self) -> None:
+    def update_layout_and_get_coordinates(self) -> list:
         """
-        To get the self._gallery_image_label_axis_list.
+        Get the reference coordinates (x-axis) of all images currently in the gallery, and return a list
         :return:
         """
         QCoreApplication.processEvents()
-        self._gallery_image_label_axis_list = [label[0].pos().x() for label in self._gallery_image_label_dict.values()]
-        # print('\033[94m' + f'{self._gallery_image_label_axis_list= }' + '\033[0m')
+        return [label[0].pos().x() for label in self._gallery_image_label_dict.values()]
+        # print('\033[46m' + f'{self._gallery_image_label_axis_list= }' + '\033[0m')
 
     def copy_raw_without_settings(self):
         clipboard = QGuiApplication.clipboard()
         clipboard.setText(self.current_image_raw_without_settings)
 
-    def copy_raw(self):
+    def copy_full(self):
         clipboard = QGuiApplication.clipboard()
         clipboard.setText(self.current_image_raw)
 
-    def edit_raw(self):
+    def edit(self):
         """
         Pop up a QDialog window for modifying the prompts of the image
         :return:
@@ -264,12 +268,21 @@ class MainWindow(QMainWindow):
         image_info = ImageInformation(file_path)
         self.ui.filename_text_browser.clear()
         self.ui.filename_text_browser.append(image_info.filename)
+
         self.ui.positive_text_browser.clear()
-        self.ui.positive_text_browser.append(image_info.positive)
+        if image_info.positive:
+            self.ui.positive_text_browser.append(image_info.positive)
+        else:
+            self.ui.positive_text_browser.insertHtml(
+                "<span style='color: red;'>No Prompt information or parsing failed</span>")
+            self.ui.positive_text_browser.setCurrentCharFormat(QTextCharFormat())
+
         self.ui.negative_text_browser.clear()
         self.ui.negative_text_browser.append(image_info.negative)
+
         self.ui.settings_text_browser.clear()
         self.ui.settings_text_browser.append(image_info.settings)
+
         self.current_image_raw_without_settings = image_info.raw_without_settings
         self.current_image_raw = image_info.raw
 
@@ -284,8 +297,8 @@ class MainWindow(QMainWindow):
         if not self.ui.gallery_refresh_button.isEnabled():
             self.ui.gallery_refresh_button.setEnabled(True)
 
-        if not self.ui.edit_raw_button.isEnabled():
-            self.ui.edit_raw_button.setEnabled(True)
+        if not self.ui.edit_button.isEnabled():
+            self.ui.edit_button.setEnabled(True)
 
     @staticmethod
     def get_default_application() -> list | None:
@@ -301,7 +314,7 @@ class MainWindow(QMainWindow):
                     path = line.strip()
                     return ['open', '-a', path]
         except subprocess.CalledProcessError as e:
-            print('Error:', e)
+            print('\033[33m' + f'Error: {e}, cannot get default application.' + '\033[0m')
         return None
 
     @staticmethod
@@ -387,7 +400,7 @@ class MainWindow(QMainWindow):
         """
         self.ui.gallery_refresh_button.setEnabled(False)
         self.ui.open_with_default_button.setEnabled(False)
-        self.ui.edit_raw_button.setEnabled(False)
+        self.ui.edit_button.setEnabled(False)
         self.clear_layout_widgets(self.scrollAreaWidgetContents_layout)
         self.ui.main_image_label.clear()
         self.ui.main_image_label.setText("Drop to open")
@@ -396,11 +409,38 @@ class MainWindow(QMainWindow):
         self.ui.negative_text_browser.clear()
         self.ui.settings_text_browser.clear()
 
+    def copy_combox_selected(self, combox_name):
+        print(f'{combox_name= }')
+        if combox_name == 'Copy_full':
+            self.setup_copy_button()
+        if combox_name == 'Copy_no_S':
+            self.setup_copy_without_settings_button()
+
+    def setup_copy_button(self):
+        self.ui.copy_button.setObjectName(u"copy_full_button")
+        self.ui.copy_button.clicked.connect(self.copy_full)
+
+    def setup_copy_without_settings_button(self):
+        self.ui.copy_button.setObjectName(u"copy_without_settings_button")
+        self.ui.copy_button.clicked.connect(self.copy_raw_without_settings)
+
+    def option_menu_trigger(self, fixed: bool = True) -> None:
+        """
+        Set the size of the Main Window to a fixed 1200x800,
+        but allow it to be resizable with a minimum size of 950x760.
+        :param fixed:
+        :return:
+        """
+        if fixed:
+            self.setMinimumSize(1200, 800)
+            self.setMaximumSize(1200, 800)
+        else:
+            self.setMinimumSize(950, 760)
+            self.setMaximumSize(16777215, 16777215)
+
 
 if __name__ == "__main__":
     app = QApplication([])
     window = MainWindow()
-    # Set the main window to a fixed size so that the user cannot resize it.
-    window.setFixedSize(1200, 800)
     window.show()
     sys.exit(app.exec())

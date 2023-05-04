@@ -11,7 +11,7 @@ Usage:
 from setuptools import setup
 
 APP = ['main.py']
-DATA_FILES = [('icon', ['icon/copy.png', 'icon/openfolder.png', 'icon/preview.png', 'icon/refresh.png'])]
+DATA_FILES = []
 OPTIONS = {'iconfile': 'icon/icon.png'}
 
 setup(

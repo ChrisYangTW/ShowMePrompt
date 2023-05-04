@@ -65,9 +65,9 @@ class ImageInformation:
             # then convert value in exif format to str
             self._raw = piexif.helper.UserComment.load(exif_dict['Exif'][piexif.ExifIFD.UserComment])
         except KeyError as e:
-            print(f'KeyError: {e}, {self._filename} does not contain [UserComment] content.')
+            print('\033[33m' + f'KeyError: {e}, {self._filename} does not contain [UserComment] content.' + '\033[0m')
         except ValueError as e:
-            print(f'ValueError: {e} ({self._filename})')
+            print('\033[33m' + f'ValueError: {e} ({self._filename})' + '\033[0m')
         else:
             self.raw_format()
 
@@ -80,9 +80,9 @@ class ImageInformation:
         return self._filename
 
     @property
-    def positive(self) -> str:
+    def positive(self) -> str | None:
         if not self._positive and not self._negative and not self._settings:
-            return '*** No Prompt information or parsing failed ***\n'
+            return None
         return self._positive
 
     @property
@@ -104,15 +104,15 @@ class ImageInformation:
 
 if __name__ == '__main__':
     for path in [
-        # '1.png',
-        # '2(loss).png',
-        # '3(encode).jpg',
-        # '4(real).jpg',
-        # '5.png'
+        '1.png',
+        '2(loss).png',
+        '3(encode).jpg',
+        '4(real).jpg',
+        '5.png'
     ]:
-        path = Path(f'../example/{path}')
+        print('<' * 10, path, '>' * 10)
+        path = Path(f'../example/images/{path}')
         img = ImageInformation(path)
-        # print(img.raw)
-        # print()
-        # print(img.raw_without_settings)
-        # print('-' * 10)
+        print(img.raw)
+        print(img.raw_without_settings)
+        print('_' * 80)

@@ -4,7 +4,7 @@ due to unfamiliarity with setting parameters in Qt Designer.app
 """
 
 from PySide6.QtCore import QCoreApplication, QMetaObject, QRect, QSize, Qt
-from PySide6.QtGui import QFont, QIcon
+from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (QGroupBox, QHBoxLayout, QLabel, QMenuBar, QPushButton, QScrollArea,
                                QSizePolicy, QSpacerItem, QStatusBar, QTextBrowser, QVBoxLayout, QWidget, QStyle,
                                QApplication)
@@ -209,7 +209,7 @@ class Ui_MainWindow(object):
     # setupUi
 
     def retranslateUi(self, MainWindow):
-        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"MainWindow", None))
+        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"Show Me Prompts", None))
         self.open_file_button.setText(QCoreApplication.translate("MainWindow", u"Open", None))
         self.open_with_default_button.setText(QCoreApplication.translate("MainWindow", u"Preview (Mac)", None))
         self.main_image_label.setText(QCoreApplication.translate("MainWindow", u"Drop to open", None))
