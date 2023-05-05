@@ -26,7 +26,7 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="5,3">
+   <layout class="QHBoxLayout" name="horizontalLayout" stretch="5,3">
     <item>
      <layout class="QVBoxLayout" name="left_verticalLayout" stretch="1,1,12,4">
       <item>
@@ -34,7 +34,7 @@
         <item>
          <widget class="QPushButton" name="open_file_button">
           <property name="sizePolicy">
-           <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+           <sizepolicy hsizetype="Ignored" vsizetype="Expanding">
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
@@ -52,7 +52,7 @@
         <item>
          <widget class="QPushButton" name="open_with_default_button">
           <property name="sizePolicy">
-           <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+           <sizepolicy hsizetype="Ignored" vsizetype="Expanding">
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
@@ -79,8 +79,11 @@
         </property>
         <property name="font">
          <font>
-          <pointsize>16</pointsize>
+          <pointsize>18</pointsize>
          </font>
+        </property>
+        <property name="styleSheet">
+         <string notr="true"/>
         </property>
        </widget>
       </item>
@@ -246,7 +249,7 @@
        </widget>
       </item>
       <item>
-       <layout class="QHBoxLayout" name="copy_horizontalLayout" stretch="1,1,1,1">
+       <layout class="QHBoxLayout" name="copy_horizontalLayout" stretch="2,2,1,2">
         <item>
          <widget class="QComboBox" name="copy_combo_box">
           <property name="sizePolicy">
@@ -270,7 +273,7 @@
         <item>
          <widget class="QPushButton" name="copy_button">
           <property name="sizePolicy">
-           <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+           <sizepolicy hsizetype="Ignored" vsizetype="Expanding">
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
@@ -301,7 +304,7 @@
         <item>
          <widget class="QPushButton" name="edit_button">
           <property name="sizePolicy">
-           <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+           <sizepolicy hsizetype="Ignored" vsizetype="Expanding">
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>

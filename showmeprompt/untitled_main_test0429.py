@@ -36,15 +36,15 @@ class Ui_MainWindow(object):
         self.actionUnFixedSize.setObjectName(u"actionUnFixedSize")
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
-        self.horizontalLayout_2 = QHBoxLayout(self.centralwidget)
-        self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
+        self.horizontalLayout = QHBoxLayout(self.centralwidget)
+        self.horizontalLayout.setObjectName(u"horizontalLayout")
         self.left_verticalLayout = QVBoxLayout()
         self.left_verticalLayout.setObjectName(u"left_verticalLayout")
         self.open_horizontalLayout = QHBoxLayout()
         self.open_horizontalLayout.setObjectName(u"open_horizontalLayout")
         self.open_file_button = QPushButton(self.centralwidget)
         self.open_file_button.setObjectName(u"open_file_button")
-        sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Expanding)
+        sizePolicy = QSizePolicy(QSizePolicy.Ignored, QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.open_file_button.sizePolicy().hasHeightForWidth())
@@ -73,7 +73,10 @@ class Ui_MainWindow(object):
         sizePolicy1.setVerticalStretch(0)
         sizePolicy1.setHeightForWidth(self.filename_text_browser.sizePolicy().hasHeightForWidth())
         self.filename_text_browser.setSizePolicy(sizePolicy1)
-        self.filename_text_browser.setFont(font)
+        font1 = QFont()
+        font1.setPointSize(18)
+        self.filename_text_browser.setFont(font1)
+        self.filename_text_browser.setStyleSheet(u"")
 
         self.left_verticalLayout.addWidget(self.filename_text_browser)
 
@@ -81,9 +84,9 @@ class Ui_MainWindow(object):
         self.main_image_label.setObjectName(u"main_image_label")
         self.main_image_label.setSizeIncrement(QSize(0, 0))
         self.main_image_label.setBaseSize(QSize(0, 0))
-        font1 = QFont()
-        font1.setPointSize(22)
-        self.main_image_label.setFont(font1)
+        font2 = QFont()
+        font2.setPointSize(22)
+        self.main_image_label.setFont(font2)
         self.main_image_label.setAcceptDrops(True)
         self.main_image_label.setAlignment(Qt.AlignCenter)
 
@@ -125,7 +128,7 @@ class Ui_MainWindow(object):
         self.left_verticalLayout.setStretch(2, 12)
         self.left_verticalLayout.setStretch(3, 4)
 
-        self.horizontalLayout_2.addLayout(self.left_verticalLayout)
+        self.horizontalLayout.addLayout(self.left_verticalLayout)
 
         self.right_verticalLayout = QVBoxLayout()
         self.right_verticalLayout.setObjectName(u"right_verticalLayout")
@@ -197,9 +200,7 @@ class Ui_MainWindow(object):
         self.copy_button.setObjectName(u"copy_button")
         sizePolicy.setHeightForWidth(self.copy_button.sizePolicy().hasHeightForWidth())
         self.copy_button.setSizePolicy(sizePolicy)
-        font2 = QFont()
-        font2.setPointSize(18)
-        self.copy_button.setFont(font2)
+        self.copy_button.setFont(font1)
 
         self.copy_horizontalLayout.addWidget(self.copy_button)
 
@@ -211,24 +212,24 @@ class Ui_MainWindow(object):
         self.edit_button.setObjectName(u"edit_button")
         sizePolicy.setHeightForWidth(self.edit_button.sizePolicy().hasHeightForWidth())
         self.edit_button.setSizePolicy(sizePolicy)
-        self.edit_button.setFont(font2)
+        self.edit_button.setFont(font1)
 
         self.copy_horizontalLayout.addWidget(self.edit_button)
 
-        self.copy_horizontalLayout.setStretch(0, 1)
-        self.copy_horizontalLayout.setStretch(1, 1)
+        self.copy_horizontalLayout.setStretch(0, 2)
+        self.copy_horizontalLayout.setStretch(1, 2)
         self.copy_horizontalLayout.setStretch(2, 1)
-        self.copy_horizontalLayout.setStretch(3, 1)
+        self.copy_horizontalLayout.setStretch(3, 2)
 
         self.right_verticalLayout.addLayout(self.copy_horizontalLayout)
 
         self.right_verticalLayout.setStretch(0, 12)
         self.right_verticalLayout.setStretch(1, 1)
 
-        self.horizontalLayout_2.addLayout(self.right_verticalLayout)
+        self.horizontalLayout.addLayout(self.right_verticalLayout)
 
-        self.horizontalLayout_2.setStretch(0, 5)
-        self.horizontalLayout_2.setStretch(1, 3)
+        self.horizontalLayout.setStretch(0, 5)
+        self.horizontalLayout.setStretch(1, 3)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(MainWindow)
         self.menubar.setObjectName(u"menubar")
