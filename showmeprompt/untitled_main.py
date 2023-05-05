@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'untitled_main_test0429.ui'
+## Form generated from reading UI file 'untitled_main.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.5.0
 ##
@@ -251,7 +251,7 @@ class Ui_MainWindow(object):
     # setupUi
 
     def retranslateUi(self, MainWindow):
-        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"MainWindow", None))
+        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"Show Me Prompt", None))
         self.actionOpen.setText(QCoreApplication.translate("MainWindow", u"Open", None))
         self.actionFixedSize.setText(QCoreApplication.translate("MainWindow", u"FixedSize", None))
         self.actionUnFixedSize.setText(QCoreApplication.translate("MainWindow", u"UnFixedSize", None))

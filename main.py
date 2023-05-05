@@ -6,7 +6,7 @@ from PySide6.QtWidgets import QApplication, QMainWindow, QFileDialog, QLabel, QG
 from PySide6.QtGui import QPixmap, QDragEnterEvent, QDropEvent, QGuiApplication, QKeyEvent, QTextCharFormat
 from PySide6.QtCore import Qt, Slot, QCoreApplication, QSize
 
-from showmeprompt.untitled_main_test0429 import Ui_MainWindow
+from showmeprompt.untitled_main import Ui_MainWindow
 from showmeprompt.get_image_exif import ImageInformation
 from showmeprompt.editor_window import EditRawWindow
 
