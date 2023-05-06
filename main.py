@@ -40,7 +40,7 @@ class MainWindow(QMainWindow):
         self._gallery_image_index_pointer = 0
         self._highlight_label_last = None
         self._gallery_image_label_axis_list = ()
-        self.current_folder_is_empty = False
+        self._current_folder_is_empty = False
 
     def setup_button_icon(self, use_builtin: bool = True) -> None:
         """
@@ -242,10 +242,10 @@ class MainWindow(QMainWindow):
         # 2. force=True
         # 3. The situation where the images in the current folder are cleared and trigger corresponding processing,
         #    and then the images are put back to the folder.
-        if file_folder_path != self.open_folder_path_last or force or self.current_folder_is_empty:
+        if file_folder_path != self.open_folder_path_last or force or self._current_folder_is_empty:
             self.gallery(file_folder_path)
             self.open_folder_path_last = file_folder_path
-            self.current_folder_is_empty = False
+            self._current_folder_is_empty = False
 
         # To read an image file and display it, including showing prompts
         pixmap = QPixmap(self.current_file_path)
@@ -460,7 +460,7 @@ class MainWindow(QMainWindow):
                     return
 
             self.renew_ui()
-            self.current_folder_is_empty = True  # for force to update gallery if needed
+            self._current_folder_is_empty = True  # for force to update gallery if needed
             self.current_file_path = Path('./fake_file_path/file.png')
             self.trigger_warning_dialog(situation='folder_empty')
         else:

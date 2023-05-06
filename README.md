@@ -1,7 +1,7 @@
 # Show Me Prompt
 A simple program for displaying and editing image prompts.
 
-![sample.png](examples/sample2.png)
+![sample.png](examples/sample2_v0_1_3.png)
 
 ## Installation
 Use the git clone command to clone the repository.
