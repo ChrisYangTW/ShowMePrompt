@@ -2,7 +2,8 @@ import subprocess
 import sys
 from pathlib import Path
 
-from PySide6.QtWidgets import QApplication, QMainWindow, QFileDialog, QLabel, QGridLayout, QMessageBox, QStyle
+from PySide6.QtWidgets import (QApplication, QMainWindow, QFileDialog, QLabel, QGridLayout,
+                               QMessageBox, QStyle, QStyleFactory)
 from PySide6.QtGui import QPixmap, QDragEnterEvent, QDropEvent, QGuiApplication, QKeyEvent, QTextCharFormat
 from PySide6.QtCore import Qt, Slot, QCoreApplication, QSize
 
@@ -520,6 +521,8 @@ class MainWindow(QMainWindow):
 
 if __name__ == "__main__":
     app = QApplication([])
+    if sys.platform == 'darwin' and 'Fusion' in QStyleFactory.keys():
+        app.setStyle(QStyleFactory.create('Fusion'))
     window = MainWindow()
     window.show()
     sys.exit(app.exec())
