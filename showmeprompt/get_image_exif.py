@@ -50,7 +50,7 @@ class ImageInformation:
             else:
                 self._raw_without_settings = self._raw[:negative_index_end]
                 self._positive = self._raw[:positive_index_end]
-                self._negative = self._raw[positive_index_end + 19:negative_index_end]
+                self._negative = self._raw[positive_index_end + 18:negative_index_end]
                 self._settings = self._raw[negative_index_end + 1:]
 
     def handle_sd_png(self):
@@ -104,15 +104,17 @@ class ImageInformation:
 
 if __name__ == '__main__':
     for path in [
-        '1.png',
-        '2(loss).png',
-        '3(encode).jpg',
-        '4(real).jpg',
-        '5.png'
+        # '1.png',
+        # '2(loss).png',
+        # '3(encode).jpg',
+        # '4(real).jpg',
+        '5.png',
+        'tt.jpeg'
     ]:
         print('<' * 10, path, '>' * 10)
         path = Path(f'../example/images/{path}')
         img = ImageInformation(path)
         print(img.raw)
-        print(img.raw_without_settings)
+        print(img.positive)
+        print(img.negative)
         print('_' * 80)
