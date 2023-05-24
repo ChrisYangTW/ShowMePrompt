@@ -5,7 +5,7 @@ import piexif.helper
 from PIL import Image
 from PIL.PngImagePlugin import PngInfo
 from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QDialog, QVBoxLayout, QTextEdit, QHBoxLayout, QPushButton, QMessageBox
+from PySide6.QtWidgets import QDialog, QVBoxLayout, QTextEdit, QHBoxLayout, QPushButton, QMessageBox, QWidget
 
 
 class EditRawWindow(QDialog):
@@ -26,9 +26,9 @@ class EditRawWindow(QDialog):
         button_layout = QHBoxLayout()
         self.cancel_button = QPushButton('Cancel', self)
         self.cancel_button.setAutoDefault(False)
-        self.cancel_button.setStyleSheet("background-color: rgba(255, 192, 203, 180)")
+        self.cancel_button.setStyleSheet("background-color: rgb(255, 100, 50)")
         self.edit_button = QPushButton('Edit', self)
-        self.edit_button.setStyleSheet("background-color: rgba(0, 195, 50, 180)")
+        self.edit_button.setStyleSheet("background-color: rgb(0, 195, 50)")
         self.edit_button.setAutoDefault(False)
         button_layout.addWidget(self.cancel_button)
         button_layout.addWidget(self.edit_button)
@@ -91,8 +91,14 @@ if __name__ == '__main__':
         def initUI(self):
             self.setWindowTitle('Button Window')
             self.setGeometry(100, 100, 800, 600)
+            widget = QWidget()
+            v_layout = QVBoxLayout()
+            widget.setLayout(v_layout)
+            self.setCentralWidget(widget)
+
             self.button = QPushButton('Open Editable Window', self)
             self.button.clicked.connect(self.show_editable_window)
+            v_layout.addWidget(self.button)
 
         def show_editable_window(self):
             editable_window = EditRawWindow(file_path=Path(), parent=self)
