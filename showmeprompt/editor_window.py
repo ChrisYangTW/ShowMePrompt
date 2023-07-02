@@ -14,7 +14,7 @@ class EditRawWindow(QDialog):
     """
     rewrite_image_raw_signal = Signal()
 
-    def __init__(self, file_path: Path, image_raw: str = '', parent=None):
+    def __init__(self, file_path: Path, image_raw='', parent=None):
         super().__init__(parent)
         self.setWindowTitle('Edit Raw Window')
         self.setGeometry(100, 100, 400, 400)
@@ -53,13 +53,16 @@ class EditRawWindow(QDialog):
         Pop up a QMessageBox to ask for confirmation to modify the prompts of the image.
         If 'Yes' is clicked, rewrite the prompts of the image, then send a signal to the main window to reload the
         image, and finally close the QDialog window.
-        :return:
         """
+        text = self.editor.toPlainText()
+        # When there are no modifications, close the window directly.
+        if text == self.image_raw:
+            self.done(0)
+            return
+
         result = QMessageBox.question(self, 'Confirmation', 'Are you sure to edit this image?',
                                       QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if result == QMessageBox.Yes:
-            text = self.editor.toPlainText()
-
             with Image.open(self.file_path) as img:
                 if img.format == 'PNG':
                     metadata = PngInfo()
@@ -76,7 +79,14 @@ class EditRawWindow(QDialog):
 
     # Overrides the reject() to allow users to cancel the dialog using the ESC key
     def reject(self):
-        self.done(0)
+        if  self.editor.toPlainText() == self.image_raw:
+            self.done(0)
+            return
+
+        result = QMessageBox.question(self, 'Confirmation', 'Changes have been made. Exit without saving?',
+                                      QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        if result == QMessageBox.Yes:
+            self.done(0)
 
 
 if __name__ == '__main__':
@@ -102,7 +112,6 @@ if __name__ == '__main__':
 
         def show_editable_window(self):
             editable_window = EditRawWindow(file_path=Path(), parent=self)
-            print(1)
             editable_window.setWindowModality(Qt.ApplicationModal)
             editable_window.show()
 

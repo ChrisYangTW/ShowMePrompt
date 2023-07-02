@@ -1,15 +1,16 @@
+import re
 from pathlib import Path
 
 from PIL import Image
 import piexif
 from piexif import helper
-import re
 
 
-class ImageInformation:
+class ImagePromptInfo:
+    """
+    Get the prompt information of an image
+    """
     def __init__(self, file_path: Path):
-        self._height = None
-        self._width = None
         self._info = {}
         self._filename = ''
         self._positive = ''
@@ -18,46 +19,23 @@ class ImageInformation:
         self._raw = ''
         self._raw_without_settings = ''
         self._filename = file_path.name
-        self.load_image(file_path)
+        self.parse_image(file_path)
 
-    def load_image(self, file_path):
+    def parse_image(self, file_path: Path):
         with Image.open(file_path) as im:
-            self._width, self._height = im.size
             self._info = im.info
             if 'parameters' in self._info and im.format == 'PNG':
-                self.handle_sd_png()
+                self.handle_sd_png_image()
             elif 'exif' in self._info and im.format in ['JPEG', 'WEBP']:
-                self.handle_sd_jpg_or_webp()
-            # no NovelAI's image to test
-            # elif self._info.get('Software') == 'NovelAI':
-            #     self.handle_nai()
+                self.handle_sd_jpg_or_webp_image()
+            elif self._info.get('Software') == 'NovelAI':
+                print('\033[4m'  + 'NotImplemented: handle Nai image' + '\033[0m')
 
-    def raw_format(self) -> None:
-        """
-        To format the self._raw (string data).
-        :return:
-        """
-        if self._raw:
-            positive_index_end = self._raw.find('\nNegative prompt:')
-            # negative_index_end = self._raw.find('\nSteps:')
-            # for civital.com Copy Generation Data structure
-            if match_string := re.search(r'(\nSteps:)|(\nSize:)', self._raw):
-                negative_index_end = match_string.start()
-            else:
-                negative_index_end = -1
-            if positive_index_end < 0 or negative_index_end < 0:
-                print(f'{self._filename} Prompt incomplete..')
-            else:
-                self._raw_without_settings = self._raw[:negative_index_end]
-                self._positive = self._raw[:positive_index_end]
-                self._negative = self._raw[positive_index_end + 18:negative_index_end]
-                self._settings = self._raw[negative_index_end + 1:]
-
-    def handle_sd_png(self):
+    def handle_sd_png_image(self):
         self._raw = self._info.get('parameters')
         self.raw_format()
 
-    def handle_sd_jpg_or_webp(self):
+    def handle_sd_jpg_or_webp_image(self):
         try:
             # to obtain exif data as a dictionary({“0th”:dict, “Exif”:dict,...})
             exif_dict = piexif.load(self._info.get('exif'))
@@ -71,9 +49,29 @@ class ImageInformation:
         else:
             self.raw_format()
 
-    # todo: novelai image
-    # def handle_nai(self):
-    #     pass
+    def handle_nai_image(self):
+        raise NotImplemented('Need to handle NovelAI\'s image')
+
+    def raw_format(self) -> None:
+        """
+        To format the self._raw
+        """
+        if self._raw:
+            positive_index_end = self._raw.find('\nNegative prompt:')
+
+            # for civital.com Copy Generation Data structure(which setting info started with "Steps:")
+            if match_string := re.search(r'(\nSteps:)|(\nSize:)', self._raw):
+                negative_index_end = match_string.start()
+            else:
+                negative_index_end = -1
+
+            if positive_index_end < 0 or negative_index_end < 0:
+                print('\033[33m' + f'{self._filename} Prompt incomplete..' + '\033[0m')
+            else:
+                self._positive = self._raw[:positive_index_end]
+                self._negative = self._raw[positive_index_end + 18:negative_index_end]
+                self._settings = self._raw[negative_index_end + 1:]
+                self._raw_without_settings = self._raw[:negative_index_end]
 
     @property
     def filename(self) -> str:
@@ -94,12 +92,12 @@ class ImageInformation:
         return self._settings
 
     @property
-    def raw_without_settings(self) -> str:
-        return self._raw_without_settings
-
-    @property
     def raw(self) -> str:
         return self._raw
+
+    @property
+    def raw_without_settings(self) -> str:
+        return self._raw_without_settings
 
 
 if __name__ == '__main__':
@@ -113,7 +111,7 @@ if __name__ == '__main__':
     ]:
         print('<' * 10, path, '>' * 10)
         path = Path(f'../example/images/{path}')
-        img = ImageInformation(path)
+        img = ImagePromptInfo(path)
         print(img.raw)
         print(img.positive)
         print(img.negative)
