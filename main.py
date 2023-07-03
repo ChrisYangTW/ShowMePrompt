@@ -20,8 +20,8 @@ class MainWindow(QMainWindow):
 
         self.copy_button_size = self.ui.copy_button.size()
 
-        self.setup_button_icon()
         self.setup_menu_action()
+        self.setup_button_icon()
         self.setup_left_side_widget()
         self.setup_right_side_widget()
 
@@ -30,11 +30,14 @@ class MainWindow(QMainWindow):
         self.scrollAreaWidgetContents_layout.setObjectName(u"scrollAreaWidgetContents_layout")
         self.ui.scrollAreaWidgetContents.setLayout(self.scrollAreaWidgetContents_layout)
 
+        self.clipboard = QGuiApplication.clipboard()
+
         self.open_folder_path_last = Path('.')
         self.current_file_path = Path('./fake_file_path/fake_file.png')
         self.default_app = None
         self.current_image_raw_without_settings = ''
         self.current_image_raw = ''
+        self._prompt_cache = {}
         self._gallery_image_label_dict = {}
         self._gallery_image_file_path_list = []
         self._gallery_image_index_end = 0
@@ -42,6 +45,13 @@ class MainWindow(QMainWindow):
         self._highlight_label_last = None
         self._gallery_image_label_axis_list = ()
         self._current_folder_is_empty = False
+
+    def setup_menu_action(self) -> None:
+        """
+        Set connect for menu action: Option(FixedSize, UnFixedSize)
+        """
+        self.ui.actionFixedSize.triggered.connect(lambda: self.window_resizing())
+        self.ui.actionUnFixedSize.triggered.connect(lambda: self.window_resizing(fixed=False))
 
     def setup_button_icon(self, use_builtin=True) -> None:
         """
@@ -60,13 +70,6 @@ class MainWindow(QMainWindow):
         else:
             raise NotImplemented('Need to add custom icons')
 
-    def setup_menu_action(self) -> None:
-        """
-        Set connect for menu action: Option(FixedSize, UnFixedSize)
-        """
-        self.ui.actionFixedSize.triggered.connect(lambda: self.option_menu_trigger())
-        self.ui.actionUnFixedSize.triggered.connect(lambda: self.option_menu_trigger(fixed=False))
-
     def setup_left_side_widget(self) -> None:
         """
         Set event or connect for open_file_button, open_with_default_button, main_image_label, gallery_refresh_button
@@ -79,7 +82,7 @@ class MainWindow(QMainWindow):
         # self.ui.main_image_label.mousePressEvent = lambda event: self.open_and_show_image()
         self.ui.main_image_label.mousePressEvent = self.show_image_use_preview
 
-        self.ui.gallery_refresh_button.clicked.connect(lambda: self.gallery(self.open_folder_path_last))
+        self.ui.gallery_refresh_button.clicked.connect(lambda: self.gallery(self.open_folder_path_last, True))
 
         # Disable open_with_default_button and gallery_refresh_button as there are no image files to open initially
         self.ui.open_with_default_button.setEnabled(False)
@@ -93,15 +96,14 @@ class MainWindow(QMainWindow):
         self.setup_copy_full_button()  # default
         self.ui.copy_combo_box.currentTextChanged.connect(self.copy_combox_selected)
 
-        self.ui.edit_button.clicked.connect(self.edit)
+        self.ui.edit_button.clicked.connect(self.edit_prompt)
         # Disable the edit_button as there are no image files to open initially
         self.ui.edit_button.setEnabled(False)
 
-    def option_menu_trigger(self, fixed=True) -> None:
+    def window_resizing(self, fixed=True) -> None:
         """
         Set the Main Window size to be fixed at 1200x800, but allow for resizing with a minimum size of 950x760
-        :param fixed:
-        :return:
+        :param fixed: set True for fixed size
         """
         if fixed:
             self.setMinimumSize(1200, 800)
@@ -144,29 +146,25 @@ class MainWindow(QMainWindow):
     def copy_prompts_full(self) -> None:
         """
         Copy full prompts and display the message on statusBar for 1.5 seconds
-        :return:
         """
-        clipboard = QGuiApplication.clipboard()
-        clipboard.setText(self.current_image_raw)
+        self.clipboard.setText(self.current_image_raw)
         self.ui.statusbar.setStyleSheet('color: green')
         self.ui.statusbar.showMessage('Copy full prompts', 1500)
 
     def copy_prompts_without_settings(self) -> None:
         """
         Copy prompts without settings and display the message on statusBar for 1.5 seconds
-        :return:
         """
-        clipboard = QGuiApplication.clipboard()
-        clipboard.setText(self.current_image_raw_without_settings)
+        self.clipboard.setText(self.current_image_raw_without_settings)
         self.ui.statusbar.setStyleSheet('color: green')
         self.ui.statusbar.showMessage('Copy prompts without settings', 1500)
 
-    def edit(self):
+    def edit_prompt(self) -> None:
         """
         Pop up a QDialog window for modifying the prompts of the image
-        :return:
         """
         editor_window = EditRawWindow(file_path=self.current_file_path, image_raw=self.current_image_raw, parent=self)
+        editor_window.rewrite_image_raw_signal.connect(lambda: self.update_image_prompt(self.current_file_path))
         editor_window.rewrite_image_raw_signal.connect(lambda: self.open_and_show_image(self.current_file_path))
         # Only after this QDialog is closed, the main window can be used again
         editor_window.setWindowModality(Qt.ApplicationModal)
@@ -189,11 +187,9 @@ class MainWindow(QMainWindow):
                     file_path = self._gallery_image_file_path_list[self._gallery_image_index_pointer + 1]
                     self.open_and_show_image(file_path)
 
-    def main_image_label_dragEnterEvent(self, event: QDragEnterEvent):
+    def main_image_label_dragEnterEvent(self, event: QDragEnterEvent) -> None:
         """
         To handle drag events, and only accepts one image file at a time.
-        :param event:
-        :return:
         """
         if event.mimeData().hasUrls() and len(event.mimeData().urls()) == 1:
             url = event.mimeData().urls()[0]
@@ -205,8 +201,6 @@ class MainWindow(QMainWindow):
     def main_image_label_dropEvent(self, event: QDropEvent) -> None:
         """
         To handle drop events, and get the file path of the image and calls self.open_and_show_image().
-        :param event:
-        :return:
         """
         url = event.mimeData().urls()[0]
         file_path = Path(url.toLocalFile())
@@ -243,15 +237,16 @@ class MainWindow(QMainWindow):
             self.gallery(file_folder_path)
             self.open_folder_path_last = file_folder_path
             self._current_folder_is_empty = False
+            self._prompt_cache.clear()
 
-        # To read an image file and display it, including showing prompts
+        # To read an image file and display it, including showing prompt
         pixmap = QPixmap(self.current_file_path)
         if pixmap.isNull():
             return
         self.ui.main_image_label.setPixmap(pixmap.scaled(self.ui.main_image_label.size(),
                                                          Qt.KeepAspectRatio,
                                                          Qt.SmoothTransformation))
-        self.show_info_to_text_browser(self.current_file_path)
+        self.show_prompt_to_text_browser()
         self.enable_buttons_when_open_image_success()
 
         # Updating self._gallery_image_index_pointer when the gallery does not need to refresh
@@ -260,34 +255,40 @@ class MainWindow(QMainWindow):
         # Updating gallery highlight
         self.gallery_image_highlight(image_name=self.current_file_path.name)
 
-    def show_info_to_text_browser(self, file_path: Path) -> None:
+    def show_prompt_to_text_browser(self) -> None:
         """
         Reads the information of the image and displays the information in the corresponding text browser
         (filename, positive, negative, settings).
         The raw data is also saved for copying purposes.
-        :param file_path:
-        :return:
         """
-        image_info = ImagePromptInfo(file_path)
+        image_prompt = self.get_image_prompt(self.current_file_path)
         self.ui.filename_text_browser.clear()
-        self.ui.filename_text_browser.append(image_info.filename)
+        self.ui.filename_text_browser.append(image_prompt.filename)
 
         self.ui.positive_text_browser.clear()
-        if image_info.positive:
-            self.ui.positive_text_browser.append(image_info.positive)
+        if image_prompt.positive:
+            self.ui.positive_text_browser.append(image_prompt.positive)
         else:
             self.ui.positive_text_browser.insertHtml(
                 "<span style='color: red;'>No Prompt information or parsing failed</span>")
             self.ui.positive_text_browser.setCurrentCharFormat(QTextCharFormat())
 
         self.ui.negative_text_browser.clear()
-        self.ui.negative_text_browser.append(image_info.negative)
+        self.ui.negative_text_browser.append(image_prompt.negative)
 
         self.ui.settings_text_browser.clear()
-        self.ui.settings_text_browser.append(image_info.settings)
+        self.ui.settings_text_browser.append(image_prompt.settings)
 
-        self.current_image_raw_without_settings = image_info.raw_without_settings
-        self.current_image_raw = image_info.raw
+        self.current_image_raw_without_settings = image_prompt.raw_without_settings
+        self.current_image_raw = image_prompt.raw
+
+    def get_image_prompt(self, file_path: Path):
+        return self._prompt_cache.get(file_path) or self.update_image_prompt(file_path)
+
+    def update_image_prompt(self, file_path: Path):
+        image_prompt = ImagePromptInfo(file_path)
+        self._prompt_cache[file_path] = image_prompt
+        return image_prompt
 
     @Slot()
     def show_image_use_preview(self, event=None):
@@ -324,17 +325,19 @@ class MainWindow(QMainWindow):
         except subprocess.CalledProcessError as e:
             print('\033[33m' + f'Error: {e}, cannot get default application.' + '\033[0m')
 
-    def gallery(self, open_folder_path: Path = None) -> None:
+    def gallery(self, open_folder_path: Path = None, click_recycle=False) -> None:
         """
         To display the content of the gallery layout, including UI processing
         But in any case, it will try to clear the content of self.scrollAreaWidgetContents_layout
         :param open_folder_path: self.open_folder_path_last(if None)
+        :param click_recycle:
         :return: None
         """
         # print('\033[4m' + '\033[92m' + 'Refresh gallery ...' + '\033[0m')
         if open_folder_path is None:
             open_folder_path = self.open_folder_path_last
-
+        if click_recycle:
+            self._prompt_cache.clear()
         # If there are widgets in the self.scrollAreaWidgetContents_layout(QGridLayout),
         # remove them first and clear self._gallery_image_label_dict, self._gallery_image_file_path_list,
         # self._highlight_label_last(need to recycle the useless QLabel if exist)
