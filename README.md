@@ -20,7 +20,6 @@ python3 main.py
 
 ## Executable
 You can use pyinstaller, py2app, py2exe to convert the code into an executable file that is compatible with the system.
-If you are using the Mac M-processor series, I have already converted it using pyinstaller and placed it in [release](https://github.com/ChrisYangTW/ShowMePrompt/releases).
 
 ## Usage
 ![usage](examples/usage_v0_1_4.png)
@@ -42,8 +41,5 @@ If you are using the Mac M-processor series, I have already converted it using p
 ## Test environment
 ```
 Python 3.11
-Macbook Pro16 M1 (OS 13.3.1 (22E261))
+Macbook Pro16 M1 (OS Version 13.4.1 (22F82))
 ```
-
-## some
-This is a small program for viewing image prompts.The code has many comments and also provides the original layout file (untitled_main.ui), so you can modify the code based on your own needs.

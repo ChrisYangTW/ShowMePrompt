@@ -4,10 +4,10 @@ from pathlib import Path
 
 from PySide6.QtWidgets import (QApplication, QMainWindow, QFileDialog, QLabel, QGridLayout,
                                QMessageBox, QStyle, QStyleFactory)
-from PySide6.QtGui import QPixmap, QDragEnterEvent, QDropEvent, QGuiApplication, QKeyEvent, QTextCharFormat
+from PySide6.QtGui import QPixmap, QDragEnterEvent, QDropEvent, QGuiApplication, QKeyEvent, QTextCharFormat, QFont
 from PySide6.QtCore import Qt, Slot, QCoreApplication, QSize, QEvent
 
-from showmeprompt.untitled_main import Ui_MainWindow
+from showmeprompt.showmeprompt_main import Ui_MainWindow
 from showmeprompt.get_image_exif import ImagePromptInfo
 from showmeprompt.editor_window import EditRawWindow
 
@@ -34,9 +34,8 @@ class MainWindow(QMainWindow):
 
         self.open_folder_path_last = Path('.')
         self.current_file_path = Path('./fake_file_path/fake_file.png')
-        self.default_app = None
-        self.current_image_raw_without_settings = ''
         self.current_image_raw = ''
+        self.current_image_raw_without_settings = ''
         self._prompt_cache = {}
         self._gallery_image_label_dict = {}
         self._gallery_image_file_path_list = []
@@ -63,24 +62,27 @@ class MainWindow(QMainWindow):
             self.ui.open_file_button.setIcon(QApplication.style().standardIcon(QStyle.SP_DirOpenIcon))
             self.ui.open_with_default_button.setIconSize(QSize(self.ui.open_with_default_button.size()))
             self.ui.open_with_default_button.setIcon(QApplication.style().standardIcon(QStyle.SP_FileDialogListView))
-            self.ui.gallery_refresh_button.setIcon(QApplication.style().standardIcon(QStyle.SP_BrowserReload))
             self.ui.gallery_refresh_button.setIconSize(QSize(self.ui.gallery_refresh_button.size()))
+            self.ui.gallery_refresh_button.setIcon(QApplication.style().standardIcon(QStyle.SP_BrowserReload))
             self.ui.edit_button.setIconSize(self.ui.edit_button.size())
             self.ui.edit_button.setIcon(QApplication.style().standardIcon(QStyle.SP_FileDialogContentsView))
         else:
-            raise NotImplemented('Need to add custom icons')
+            raise NotImplemented('No custom icons')
 
     def setup_left_side_widget(self) -> None:
         """
-        Set event or connect for open_file_button, open_with_default_button, main_image_label, gallery_refresh_button
+        Set event or connect for open_file_button, open_with_default_button(only for Mac), main_image_label,
+        gallery_refresh_button
         """
         self.ui.open_file_button.clicked.connect(self.open_and_show_image)
-        self.ui.open_with_default_button.clicked.connect(self.show_image_use_preview)
+        if sys.platform == 'darwin':
+            self.get_default_application()
+            self.ui.open_with_default_button.clicked.connect(self.show_image_use_preview)
+            # self.ui.main_image_label.mousePressEvent = lambda event: self.open_and_show_image()
+            self.ui.main_image_label.mousePressEvent = self.show_image_use_preview
 
         self.ui.main_image_label.dragEnterEvent = self.main_image_label_dragEnterEvent
         self.ui.main_image_label.dropEvent = self.main_image_label_dropEvent
-        # self.ui.main_image_label.mousePressEvent = lambda event: self.open_and_show_image()
-        self.ui.main_image_label.mousePressEvent = self.show_image_use_preview
 
         self.ui.gallery_refresh_button.clicked.connect(lambda: self.gallery(self.open_folder_path_last, True))
 
@@ -91,7 +93,6 @@ class MainWindow(QMainWindow):
     def setup_right_side_widget(self) -> None:
         """
         Set up copy and edit button, and connect them to their corresponding functions
-        :return:
         """
         self.setup_copy_full_button()  # default
         self.ui.copy_combo_box.currentTextChanged.connect(self.copy_combox_selected)
@@ -112,21 +113,19 @@ class MainWindow(QMainWindow):
             self.setMinimumSize(950, 760)
             self.setMaximumSize(16777215, 16777215)
 
-    def copy_combox_selected(self, combox_name) -> None:
+    def copy_combox_selected(self, combox_name: str) -> None:
         """
         Set the properties of the copy_button according to the content of the combobox
-        :param combox_name:
-        :return:
+        :param combox_name: 'Copy_full' or 'Copy_no_S'
         """
         if combox_name == 'Copy_full':
             self.setup_copy_full_button()
-        if combox_name == 'Copy_no_S':
+        elif combox_name == 'Copy_no_S':
             self.setup_copy_without_settings_button()
 
     def setup_copy_full_button(self) -> None:
         """
         Set up the copy button for 'Copy-full'
-        :return:
         """
         self.ui.copy_button.setObjectName(u"copy_prompts_full_button")
         self.ui.copy_button.setIconSize(self.copy_button_size)
@@ -136,7 +135,6 @@ class MainWindow(QMainWindow):
     def setup_copy_without_settings_button(self) -> None:
         """
         Set up the copy button for 'Copy-n-S'
-        :return:
         """
         self.ui.copy_button.setObjectName(u"copy_without_settings_button")
         self.ui.copy_button.setIconSize(self.copy_button_size)
@@ -170,12 +168,10 @@ class MainWindow(QMainWindow):
         editor_window.setWindowModality(Qt.ApplicationModal)
         editor_window.show()
 
-    def keyPressEvent(self, event: QKeyEvent):
+    def keyPressEvent(self, event: QKeyEvent) -> None:
         """
         keyboard event(for A and S), A/S controls selecting different images.
         only works when self._gallery_image_label_dict is not empty
-        :param event:
-        :return:
         """
         if self._gallery_image_label_dict:
             if event.key() == Qt.Key_A:
@@ -282,61 +278,59 @@ class MainWindow(QMainWindow):
         self.current_image_raw_without_settings = image_prompt.raw_without_settings
         self.current_image_raw = image_prompt.raw
 
-    def get_image_prompt(self, file_path: Path):
+    def get_image_prompt(self, file_path: Path) -> ImagePromptInfo:
+        """
+        Get image's ImagePromptInfo instance
+        """
         return self._prompt_cache.get(file_path) or self.update_image_prompt(file_path)
 
-    def update_image_prompt(self, file_path: Path):
+    def update_image_prompt(self, file_path: Path) -> ImagePromptInfo:
+        """
+        Updating image's ImagePromptInfo instance
+        """
         image_prompt = ImagePromptInfo(file_path)
         self._prompt_cache[file_path] = image_prompt
         return image_prompt
 
     @Slot()
-    def show_image_use_preview(self, event=None):
+    def show_image_use_preview(self, event=None) -> None:
         """
         To open an image using the default program in Mac.
         :param event: accept mousePressEvent event
-        :return:
         """
         if not self.current_file_path.exists():
             self.handle_image_or_folder_deletion()
             return
 
-        self.default_app = self.default_app or self.get_default_application()
         try:
             if not event or (event.button() == Qt.LeftButton and event.type() == QEvent.MouseButtonDblClick):
-                subprocess.call(self.default_app + [str(self.current_file_path)])
-            # elif event.button() == Qt.LeftButton and event.type() == QEvent.MouseButtonDblClick and self.ui.main_image_label.pixmap():
-            #     subprocess.call(self.default_app + [str(self.current_file_path)])
+                subprocess.call(self.default_app_text_command + [str(self.current_file_path)])
         except subprocess.CalledProcessError as e:
             print('\033[33m' + f'Error: {e}, cannot call default application.' + '\033[0m')
 
-    @staticmethod
-    def get_default_application() -> list | None:
+    def get_default_application(self) -> None:
         """
-        Get the default application on the system (for Mac)
-        :return:
+        Get the default application 'Preview.app' command on the system (for Mac)
         """
         try:
             all_apps = subprocess.check_output(['mdfind', 'kMDItemContentTypeTree=com.apple.application-bundle']).decode('utf-8')
             for line in all_apps.splitlines():
                 if 'Preview.app' in line:
                     path = line.strip()
-                    return ['open', '-a', path]
+                    self.default_app_text_command = ['open', '-a', path]
         except subprocess.CalledProcessError as e:
             print('\033[33m' + f'Error: {e}, cannot get default application.' + '\033[0m')
 
-    def gallery(self, open_folder_path: Path = None, click_recycle=False) -> None:
+    def gallery(self, open_folder_path: Path, is_refresh=False) -> None:
         """
         To display the content of the gallery layout, including UI processing
         But in any case, it will try to clear the content of self.scrollAreaWidgetContents_layout
         :param open_folder_path: self.open_folder_path_last(if None)
-        :param click_recycle:
+        :param is_refresh: Set to True means called by clicking refresh button
         :return: None
         """
         # print('\033[4m' + '\033[92m' + 'Refresh gallery ...' + '\033[0m')
-        if open_folder_path is None:
-            open_folder_path = self.open_folder_path_last
-        if click_recycle:
+        if is_refresh:
             self._prompt_cache.clear()
         # If there are widgets in the self.scrollAreaWidgetContents_layout(QGridLayout),
         # remove them first and clear self._gallery_image_label_dict, self._gallery_image_file_path_list,
@@ -383,8 +377,6 @@ class MainWindow(QMainWindow):
     def clear_layout_widgets(layout) -> None:
         """
         Clear all widgets inside a layout.
-        :param layout:
-        :return:None
         """
         # while layout.count():
         #     widget = layout.takeAt(0).widget()
@@ -407,7 +399,7 @@ class MainWindow(QMainWindow):
         :return:
         """
         self._gallery_image_label_axis_list = self.update_layout_and_get_coordinates()
-
+        # Remove the last image's border
         if self._highlight_label_last:
             self._highlight_label_last.setStyleSheet(None)
 
@@ -432,16 +424,11 @@ class MainWindow(QMainWindow):
     def enable_buttons_when_open_image_success(self) -> None:
         """
         Once an image is successfully opened, enable preview, refresh and edit buttons
-        :return:
         """
-        if not self.ui.open_with_default_button.isEnabled() and sys.platform == 'darwin':
+        self.ui.gallery_refresh_button.setEnabled(True)
+        self.ui.edit_button.setEnabled(True)
+        if sys.platform == 'darwin':
             self.ui.open_with_default_button.setEnabled(True)
-
-        if not self.ui.gallery_refresh_button.isEnabled():
-            self.ui.gallery_refresh_button.setEnabled(True)
-
-        if not self.ui.edit_button.isEnabled():
-            self.ui.edit_button.setEnabled(True)
 
     def handle_image_or_folder_deletion(self) -> None:
         """
@@ -450,6 +437,7 @@ class MainWindow(QMainWindow):
         if self.open_folder_path_last.exists():
             files_list = sorted([file for file in self.open_folder_path_last.glob('*')
                                  if file.suffix.lower() in ['.png', '.jpg', '.jpeg', '.webp']])
+            # If there is an image, open and show it
             for file in files_list:
                 pixmap = QPixmap(file)
                 if not pixmap.isNull():
@@ -458,7 +446,7 @@ class MainWindow(QMainWindow):
                     return
 
             self.renew_ui()
-            self._current_folder_is_empty = True  # for force to update gallery if needed
+            self._current_folder_is_empty = True  # for force to update gallery
             self.current_file_path = Path('./fake_file_path/file.png')
             self.trigger_warning_dialog(situation='folder_empty')
         else:
@@ -471,7 +459,6 @@ class MainWindow(QMainWindow):
         """
         Display different QMessageBoxes based on different situations.
         situation: 'image_deletion' | 'folder_empty' | 'folder_deletion'
-        :return:
         """
         match situation:
             case 'image_deletion':
@@ -502,7 +489,6 @@ class MainWindow(QMainWindow):
     def renew_ui(self) -> None:
         """
         Reset the UI to its initial state, but keep self.open_folder_path_last and self.current_file_path
-        :return:
         """
         self.ui.gallery_refresh_button.setEnabled(False)
         self.ui.open_with_default_button.setEnabled(False)

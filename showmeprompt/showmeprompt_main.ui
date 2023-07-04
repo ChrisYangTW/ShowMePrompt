@@ -133,7 +133,7 @@
              <x>0</x>
              <y>0</y>
              <width>653</width>
-             <height>150</height>
+             <height>148</height>
             </rect>
            </property>
           </widget>
@@ -258,6 +258,11 @@
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
+          <property name="font">
+           <font>
+            <pointsize>18</pointsize>
+           </font>
+          </property>
           <item>
            <property name="text">
             <string>Copy_full</string>
@@ -331,7 +336,7 @@
      <x>0</x>
      <y>0</y>
      <width>1200</width>
-     <height>24</height>
+     <height>37</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuOption">

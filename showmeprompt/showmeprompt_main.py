@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'untitled_main.ui'
+## Form generated from reading UI file 'showmeprompt_main.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.5.0
+## Created by: Qt User Interface Compiler version 6.5.1
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -100,7 +100,7 @@ class Ui_MainWindow(object):
         self.scrollAreaWidgetContents = QWidget()
         self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
         self.scrollAreaWidgetContents.setEnabled(True)
-        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 653, 150))
+        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 653, 148))
         self.scrollArea.setWidget(self.scrollAreaWidgetContents)
 
         self.gallery_display_layout.addWidget(self.scrollArea)
@@ -193,6 +193,7 @@ class Ui_MainWindow(object):
         sizePolicy3.setVerticalStretch(0)
         sizePolicy3.setHeightForWidth(self.copy_combo_box.sizePolicy().hasHeightForWidth())
         self.copy_combo_box.setSizePolicy(sizePolicy3)
+        self.copy_combo_box.setFont(font1)
 
         self.copy_horizontalLayout.addWidget(self.copy_combo_box)
 
@@ -233,7 +234,7 @@ class Ui_MainWindow(object):
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(MainWindow)
         self.menubar.setObjectName(u"menubar")
-        self.menubar.setGeometry(QRect(0, 0, 1200, 24))
+        self.menubar.setGeometry(QRect(0, 0, 1200, 37))
         self.menuOption = QMenu(self.menubar)
         self.menuOption.setObjectName(u"menuOption")
         MainWindow.setMenuBar(self.menubar)
