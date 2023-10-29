@@ -19,6 +19,7 @@ class MainWindow(QMainWindow):
         self.ui.setupUi(self)
 
         self.copy_button_size = self.ui.copy_button.size()
+        self.default_app_text_command = None
 
         self.setup_menu_action()
         self.setup_button_icon()
@@ -304,7 +305,7 @@ class MainWindow(QMainWindow):
 
         try:
             if not event or (event.button() == Qt.LeftButton and event.type() == QEvent.MouseButtonDblClick):
-                subprocess.call(self.default_app_text_command + [str(self.current_file_path)])
+                subprocess.run(self.default_app_text_command + [str(self.current_file_path)], check=True)
         except subprocess.CalledProcessError as e:
             print('\033[33m' + f'Error: {e}, cannot call default application.' + '\033[0m')
 
