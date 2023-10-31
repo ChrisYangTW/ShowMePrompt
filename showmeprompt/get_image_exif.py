@@ -12,13 +12,14 @@ class ImagePromptInfo:
     """
     def __init__(self, file_path: Path):
         self._info = {}
-        self._filename = ''
+        # self._filename = ''
         self._positive = ''
         self._negative = ''
         self._settings = ''
         self._raw = ''
         self._raw_without_settings = ''
-        self._filename = file_path.name
+        # self._filename = file_path.name
+        self._file_path = file_path
         self.parse_image(file_path)
 
     def parse_image(self, file_path: Path):
@@ -29,7 +30,7 @@ class ImagePromptInfo:
             elif 'exif' in self._info and im.format in ['JPEG', 'WEBP']:
                 self.handle_sd_jpg_or_webp_image()
             elif self._info.get('Software') == 'NovelAI':
-                print('\033[4m'  + 'NotImplemented: handle Nai image' + '\033[0m')
+                print('\033[4m' + 'NotImplemented: handle Nai image' + '\033[0m')
 
     def handle_sd_png_image(self):
         self._raw = self._info.get('parameters')
@@ -43,9 +44,9 @@ class ImagePromptInfo:
             # then convert value in exif format to str
             self._raw = piexif.helper.UserComment.load(exif_dict['Exif'][piexif.ExifIFD.UserComment])
         except KeyError as e:
-            print('\033[33m' + f'KeyError: {e}, {self._filename} does not contain [UserComment] content.' + '\033[0m')
+            print('\033[33m' + f'KeyError: {e}, {self._file_path.name} does not contain [UserComment] content.' + '\033[0m')
         except ValueError as e:
-            print('\033[33m' + f'ValueError: {e} ({self._filename})' + '\033[0m')
+            print('\033[33m' + f'ValueError: {e} ({self._file_path.name})' + '\033[0m')
         else:
             self.raw_format()
 
@@ -66,7 +67,7 @@ class ImagePromptInfo:
                 negative_index_end = -1
 
             if positive_index_end < 0 or negative_index_end < 0:
-                print('\033[33m' + f'{self._filename} Prompt incomplete..' + '\033[0m')
+                print('\033[33m' + f'{self._file_path.name} Prompt incomplete..' + '\033[0m')
             else:
                 self._positive = self._raw[:positive_index_end]
                 self._negative = self._raw[positive_index_end + 18:negative_index_end]
@@ -75,7 +76,7 @@ class ImagePromptInfo:
 
     @property
     def filename(self) -> str:
-        return self._filename
+        return self._file_path.name
 
     @property
     def positive(self) -> str | None:
@@ -112,6 +113,7 @@ if __name__ == '__main__':
         print('<' * 10, path, '>' * 10)
         path = Path(f'../example/images/{path}')
         img = ImagePromptInfo(path)
+        print(img.filename)
         print(img.raw)
         print(img.positive)
         print(img.negative)
