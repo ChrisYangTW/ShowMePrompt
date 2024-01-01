@@ -1,5 +1,5 @@
 # Show Me Prompt
-A simple program for displaying and editing image prompts.
+A simple program for displaying and editing an image's prompts.
 
 ![sample.png](examples/sample2_v0_1_4.png)
 
@@ -9,7 +9,7 @@ Use the git clone command to clone the repository.
 git clone https://github.com/ChrisYangTW/ShowMePrompt.git
 ```
 Switch to the folder where you have placed the repository,
-and install the necessary dependencies.
+and install the necessary dependencies. (Recommend using a virtual environment)
 ```
 pip3 install -r requirements.txt
 ```
@@ -17,9 +17,6 @@ Finally, run the main.py
 ```
 python3 main.py
 ```
-
-## Executable
-You can use pyinstaller, py2app, py2exe to convert the code into an executable file that is compatible with the system.
 
 ## Usage
 ![usage](examples/usage_v0_1_4.png)
@@ -34,12 +31,8 @@ You can use pyinstaller, py2app, py2exe to convert the code into an executable f
 * Editable image prompts are allowed, but they must follow a specific format.
   * Positive, Negative, and settings should be separated by an enter.(As shown in the figure below, make sure to separate these three paragraphs with an "enter" between them)
   * ![editor](examples/editor.png)
-  * Also, you can simply click "Copy Generation Data" on civitai.com and paste it directly.
-* Others:
-  * Since I don't have a Windows to test the default program for opening images, "Preview" will be disabled on Windows system.
 
 ## Test environment
 ```
-Python 3.11
-Macbook Pro16 M1 (OS Version 13.4.1 (22F82))
+Python 3.12 (on macOS 14.2.1)
 ```
