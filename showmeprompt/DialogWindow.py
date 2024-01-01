@@ -5,16 +5,16 @@ import piexif.helper
 from PIL import Image
 from PIL.PngImagePlugin import PngInfo
 from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QDialog, QVBoxLayout, QTextEdit, QHBoxLayout, QPushButton, QMessageBox, QWidget
+from PySide6.QtWidgets import QDialog, QVBoxLayout, QTextEdit, QHBoxLayout, QPushButton, QMessageBox, QWidget, QLineEdit
 
 
 class EditRawWindow(QDialog):
     """
-    QDialog window for editing image prompts
+    QDialog window for editing an image's prompts
     """
-    rewrite_image_raw_signal = Signal()
+    Rewrite_Image_Raw_Signal = Signal()
 
-    def __init__(self, file_path: Path, image_raw='', parent=None):
+    def __init__(self, file_path: Path, image_raw: str = '', parent=None) -> None:
         super().__init__(parent)
         self.setWindowTitle('Edit Raw Window')
         self.setGeometry(100, 100, 400, 400)
@@ -44,11 +44,11 @@ class EditRawWindow(QDialog):
             center_point = self.parentWidget().geometry().center()
             self.move(center_point.x() - self.width() / 2, center_point.y() - self.height() / 2)
 
-        self.file_path = file_path
-        self.image_raw = image_raw
+        self.file_path: Path = file_path
+        self.image_raw: str = image_raw
         self.editor.setText(self.image_raw)
 
-    def edit(self):
+    def edit(self) -> None:
         """
         Pop up a QMessageBox to ask for confirmation to modify the prompts of the image.
         If 'Yes' is clicked, rewrite the prompts of the image, then send a signal to the main window to reload the
@@ -74,12 +74,12 @@ class EditRawWindow(QDialog):
                     exif_bytes = piexif.dump(exif_dict)
                     img.save(self.file_path, exif=exif_bytes)
 
-            self.rewrite_image_raw_signal.emit()
+            self.Rewrite_Image_Raw_Signal.emit()
             self.done(0)
 
     # Overrides the reject() to allow users to cancel the dialog using the ESC key
-    def reject(self):
-        if  self.editor.toPlainText() == self.image_raw:
+    def reject(self) -> None:
+        if self.editor.toPlainText() == self.image_raw:
             self.done(0)
             return
 
@@ -87,6 +87,54 @@ class EditRawWindow(QDialog):
                                       QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if result == QMessageBox.Yes:
             self.done(0)
+
+
+class RenameWindow(QDialog):
+    """
+    QDialog window for renaming an image file
+    """
+    Rename_Signal = Signal(Path)
+
+    def __init__(self, file_path: Path, parent=None) -> None:
+        super().__init__(parent)
+        self.setWindowTitle('Rename Window')
+        self.setGeometry(0, 0, 300, 20)
+
+        layout = QVBoxLayout(self)
+        self.editor = QLineEdit(self)
+        self.rename_button = QPushButton('Rename', self)
+        layout.addWidget(self.editor)
+        layout.addWidget(self.rename_button)
+
+        self.rename_button.clicked.connect(self.rename)
+
+        # Move the QDialog window to the center of the main window
+        if self.parentWidget():
+            center_point = self.parentWidget().geometry().center()
+            self.move(center_point.x() - self.width() / 2, center_point.y() - self.height() / 2)
+
+        self.file_path: Path = file_path
+        self.editor.setText(self.file_path.stem)
+
+    def rename(self) -> None:
+        new_filename = self.editor.text()
+        if new_filename != self.file_path.stem:
+            new_file_path: Path = self.file_path.parent / f'{new_filename}{self.file_path.suffix}'
+            if new_file_path.exists():
+                QMessageBox.warning(
+                    self,
+                    'Warning',
+                    'The folder contains files with the same name',
+                    QMessageBox.Ok,
+                    QMessageBox.Ok
+                )
+                return
+            self.Rename_Signal.emit(new_file_path)
+
+        self.done(0)
+
+    def reject(self) -> None:
+        self.done(0)
 
 
 if __name__ == '__main__':
@@ -106,14 +154,26 @@ if __name__ == '__main__':
             widget.setLayout(v_layout)
             self.setCentralWidget(widget)
 
-            self.button = QPushButton('Open Editable Window', self)
-            self.button.clicked.connect(self.show_editable_window)
-            v_layout.addWidget(self.button)
+            self.edit_raw_button = QPushButton('Open Editable Window', self)
+            self.edit_raw_button.clicked.connect(self.show_editable_window)
+            self.rename_button = QPushButton('Open Rename Window', self)
+            self.rename_button.clicked.connect(self.show_rename_window)
+            v_layout.addWidget(self.edit_raw_button)
+            v_layout.addWidget(self.rename_button)
 
         def show_editable_window(self):
             editable_window = EditRawWindow(file_path=Path(), parent=self)
             editable_window.setWindowModality(Qt.ApplicationModal)
             editable_window.show()
+
+        def show_rename_window(self):
+            rename_window = RenameWindow(file_path=Path('/User/username/fake.file'), parent=self)
+            rename_window.Rename_Signal.connect(self.handle_rename_signal)
+            rename_window.setWindowModality(Qt.ApplicationModal)
+            rename_window.show()
+
+        def handle_rename_signal(self, new_file_path: Path):
+            print(f'Receive the rename signal: {new_file_path=}')
 
 
     app = QApplication([])

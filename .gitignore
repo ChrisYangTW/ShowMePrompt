@@ -164,5 +164,13 @@ cython_debug/
 example/
 try_code/
 config.txt
-main.spec
 .DS_Store
+
+# for Pyinstaller
+main.spec
+
+# for Poetry
+poetry.lock
+pyproject.toml
+
+# for debug
