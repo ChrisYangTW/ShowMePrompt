@@ -10,19 +10,17 @@ class ImagePromptInfo:
     """
     Get the prompt information of an image
     """
-    def __init__(self, file_path: Path):
-        self._info = {}
-        # self._filename = ''
-        self._positive = ''
-        self._negative = ''
-        self._settings = ''
-        self._raw = ''
-        self._raw_without_settings = ''
-        # self._filename = file_path.name
-        self._file_path = file_path
+    def __init__(self, file_path: Path) -> None:
+        self._info: dict = {}
+        self._positive: str = ''
+        self._negative: str = ''
+        self._settings: str = ''
+        self._raw: str = ''
+        self._raw_without_settings: str = ''
+        self._file_path: Path = file_path
         self.parse_image(file_path)
 
-    def parse_image(self, file_path: Path):
+    def parse_image(self, file_path: Path) -> None:
         with Image.open(file_path) as im:
             self._info = im.info
             if 'parameters' in self._info and im.format == 'PNG':
@@ -32,11 +30,11 @@ class ImagePromptInfo:
             elif self._info.get('Software') == 'NovelAI':
                 print('\033[4m' + 'NotImplemented: handle Nai image' + '\033[0m')
 
-    def handle_sd_png_image(self):
+    def handle_sd_png_image(self) -> None:
         self._raw = self._info.get('parameters')
         self.raw_format()
 
-    def handle_sd_jpg_or_webp_image(self):
+    def handle_sd_jpg_or_webp_image(self) -> None:
         try:
             # to obtain exif data as a dictionary({“0th”:dict, “Exif”:dict,...})
             exif_dict = piexif.load(self._info.get('exif'))
@@ -50,7 +48,7 @@ class ImagePromptInfo:
         else:
             self.raw_format()
 
-    def handle_nai_image(self):
+    def handle_nai_image(self) -> None:
         raise NotImplemented('Need to handle NovelAI\'s image')
 
     def raw_format(self) -> None:
