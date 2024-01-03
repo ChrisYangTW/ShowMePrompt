@@ -1,9 +1,19 @@
 import re
 from pathlib import Path
+from dataclasses import dataclass
 
 from PIL import Image
 import piexif
 from piexif import helper
+
+
+@dataclass(slots=True)
+class ImagePromptsData:
+    positive: str = ''
+    negative: str = ''
+    settings: str = ''
+    raw: str = ''
+    raw_without_settings: str = ''
 
 
 class ImagePromptInfo:
@@ -98,6 +108,17 @@ class ImagePromptInfo:
     def raw_without_settings(self) -> str:
         return self._raw_without_settings
 
+    @property
+    def prompts(self) -> ImagePromptsData:
+        if not self._positive and not self._negative and not self._settings:
+            return ImagePromptsData()
+        return ImagePromptsData(positive=self._positive,
+                                negative=self._negative,
+                                settings=self._settings,
+                                raw=self._raw,
+                                raw_without_settings=self._raw_without_settings
+                                )
+
 
 if __name__ == '__main__':
     for path in [
@@ -110,9 +131,8 @@ if __name__ == '__main__':
     ]:
         print('<' * 10, path, '>' * 10)
         path = Path(f'../example/images/{path}')
-        img = ImagePromptInfo(path)
-        print(img.filename)
-        print(img.raw)
-        print(img.positive)
-        print(img.negative)
+        img_prompts = ImagePromptInfo(path).prompts
+        print(img_prompts.raw)
+        print(img_prompts.positive)
+        print(img_prompts.negative)
         print('_' * 80)

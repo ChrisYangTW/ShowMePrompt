@@ -1,4 +1,5 @@
 from pathlib import Path
+from dataclasses import dataclass
 import shutil
 import subprocess
 import sys
@@ -8,11 +9,18 @@ from PySide6.QtGui import QPixmap, QDragEnterEvent, QDropEvent, QGuiApplication,
 from PySide6.QtCore import Qt, Slot, QCoreApplication, QSize, QEvent
 
 from showmeprompt.showmeprompt_UI import Ui_MainWindow
-from showmeprompt.GetImageExif import ImagePromptInfo
+from showmeprompt.GetImageExif import ImagePromptInfo, ImagePromptsData
 from showmeprompt.DialogWindow import EditRawWindow, RenameWindow
 
 from showmeprompt.LoggerConf import get_logger
 logger = get_logger(__name__)
+
+
+@dataclass(slots=True)
+class ImageLabelData:
+    label: QLabel
+    path: Path
+    index: int
 
 
 class MainWindow(QMainWindow):
@@ -36,19 +44,19 @@ class MainWindow(QMainWindow):
 
         self.clipboard = QGuiApplication.clipboard()
 
-        self.current_open_folder_Path: Path = Path('.')
-        self.current_image_file_Path: Path = Path('./fake_file_path/fake_file.png')
+        self.current_open_folder: Path = Path('.')
+        self.current_image_file: Path = Path('./fake_file_path/fake_file.png')
         self.saveto_folder_path = ''
-        self.current_image_raw = ''
-        self.current_image_raw_without_settings = ''
+        self.current_image_raw: str = ''
+        self.current_image_raw_without_settings: str = ''
         self._prompt_cache: dict = {}
         self._gallery_image_label: dict = {}
         self._gallery_image_file_path_list: list = []
-        self._gallery_image_label_axis_list = None
+        self._gallery_image_label_axis_list: list | None = None
         self._gallery_image_index_end: int = 0
         self._gallery_image_index_pointer: int = 0
-        self._highlight_label_last = None
-        self._current_folder_is_empty = False
+        self._highlight_label_last: QLabel | None = None
+        self._current_folder_is_empty: bool = False
 
     def setup_menu_action(self) -> None:
         """
@@ -94,7 +102,7 @@ class MainWindow(QMainWindow):
         self.ui.main_image_label.setContextMenuPolicy(Qt.CustomContextMenu)
         self.ui.main_image_label.customContextMenuRequested.connect(self.show_main_image_label_menu)
 
-        self.ui.gallery_refresh_button.clicked.connect(lambda: self.gallery(self.current_open_folder_Path, True))
+        self.ui.gallery_refresh_button.clicked.connect(lambda: self.gallery(self.current_open_folder, True))
 
         # Disable open_with_default_button and gallery_refresh_button as there are no image files to open initially
         self.ui.open_with_default_button.setEnabled(False)
@@ -174,7 +182,7 @@ class MainWindow(QMainWindow):
         Pop up a QDialog window for modifying the prompts of the image
         :return: None
         """
-        editor_window = EditRawWindow(file_path=self.current_image_file_Path, image_raw=self.current_image_raw, parent=self)
+        editor_window = EditRawWindow(file_path=self.current_image_file, image_raw=self.current_image_raw, parent=self)
         editor_window.Rewrite_Image_Raw_Signal.connect(self.update_current_image_prompt_and_redisplay)
         # Only after this QDialog is closed, the main window can be used again
         editor_window.setWindowModality(Qt.ApplicationModal)
@@ -186,7 +194,7 @@ class MainWindow(QMainWindow):
         Update the current image's prompt and redisplay the new prompt
         :return: None
         """
-        self.update_image_prompt(self.current_image_file_Path)
+        self.update_image_prompt(self.current_image_file)
         self.show_filename_and_prompt()
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
@@ -236,34 +244,36 @@ class MainWindow(QMainWindow):
         """
         # If opened through the open button, there will be no file_path parameter
         if not file_path:
-            selected_file_path, _ = QFileDialog.getOpenFileName(self, "Open Image", str(self.current_open_folder_Path),
+            selected_file_path, _ = QFileDialog.getOpenFileName(self, "Open Image", str(self.current_open_folder),
                                                                 "Image Files (*.png *.jpg *.jpeg *.webp)")
             if not _:
                 return
             else:
-                self.current_image_file_Path = Path(selected_file_path)
+                self.current_image_file = Path(selected_file_path)
         else:
-            self.current_image_file_Path = file_path
-            if not self.current_image_file_Path.exists():
+            self.current_image_file = file_path
+            if not self.current_image_file.exists():
                 self.handle_image_or_folder_deletion()
                 return
 
-        file_folder_path = self.current_image_file_Path.parent
-        # Updating the gallery and self.current_open_folder_Path if
+        # Confirm whether it is a valid image file that can be opened successfully
+        pixmap = QPixmap(self.current_image_file)
+        if pixmap.isNull():
+            return
+
+        file_folder_path = self.current_image_file.parent
+        # Updating the gallery and self.current_open_folder if
         # 1. the opened folder has been changed
         # 2. force=True
         # 3. The situation where the images in the current folder are cleared and trigger corresponding processing,
         #    and then the images are put back to the folder.
-        if file_folder_path != self.current_open_folder_Path or force or self._current_folder_is_empty:
+        if file_folder_path != self.current_open_folder or force or self._current_folder_is_empty:
             self.gallery(file_folder_path)
-            self.current_open_folder_Path = file_folder_path
+            self.current_open_folder = file_folder_path
             self._current_folder_is_empty = False
             self._prompt_cache.clear()
 
-        # To read an image file and display it, including showing prompt
-        pixmap = QPixmap(self.current_image_file_Path)
-        if pixmap.isNull():
-            return
+        # To display the image, including showing its prompts
         self.ui.main_image_label.setPixmap(pixmap.scaled(self.ui.main_image_label.size(),
                                                          Qt.KeepAspectRatio,
                                                          Qt.SmoothTransformation))
@@ -271,10 +281,10 @@ class MainWindow(QMainWindow):
         self.enable_buttons_when_open_image_success()
 
         # Updating self._gallery_image_index_pointer when the gallery does not need to refresh
-        self._gallery_image_index_pointer = self._gallery_image_file_path_list.index(self.current_image_file_Path)
+        self._gallery_image_index_pointer = self._gallery_image_file_path_list.index(self.current_image_file)
 
         # Updating gallery highlight
-        self.gallery_image_highlight(image_name=self.current_image_file_Path.name)
+        self.gallery_image_highlight(image_path=self.current_image_file)
 
     def show_filename_and_prompt(self) -> None:
         """
@@ -282,40 +292,40 @@ class MainWindow(QMainWindow):
         (filename, positive, negative, settings).
         The raw data is also saved for copying purposes.
         """
-        image_prompt = self.get_image_prompt(self.current_image_file_Path)
+        prompts = self.get_image_prompts(self.current_image_file)
         self.ui.filename_text_browser.clear()
-        self.ui.filename_text_browser.append(self.current_image_file_Path.name)
+        self.ui.filename_text_browser.append(self.current_image_file.name)
 
         self.ui.positive_text_browser.clear()
-        if image_prompt.positive:
-            self.ui.positive_text_browser.append(image_prompt.positive)
+        if prompts.positive:
+            self.ui.positive_text_browser.append(prompts.positive)
         else:
             self.ui.positive_text_browser.insertHtml(
                 "<span style='color: red;'>No Prompt information or parsing failed</span>")
             self.ui.positive_text_browser.setCurrentCharFormat(QTextCharFormat())
 
         self.ui.negative_text_browser.clear()
-        self.ui.negative_text_browser.append(image_prompt.negative)
+        self.ui.negative_text_browser.append(prompts.negative)
 
         self.ui.settings_text_browser.clear()
-        self.ui.settings_text_browser.append(image_prompt.settings)
+        self.ui.settings_text_browser.append(prompts.settings)
 
-        self.current_image_raw_without_settings = image_prompt.raw_without_settings
-        self.current_image_raw = image_prompt.raw
+        self.current_image_raw_without_settings = prompts.raw_without_settings
+        self.current_image_raw = prompts.raw
 
-    def get_image_prompt(self, file_path: Path) -> ImagePromptInfo:
+    def get_image_prompts(self, file_path: Path) -> ImagePromptsData:
         """
-        Get image's ImagePromptInfo instance
+        Get image's prompts(ImagePromptInfo instance)
         """
         return self._prompt_cache.get(file_path) or self.update_image_prompt(file_path)
 
-    def update_image_prompt(self, file_path: Path) -> ImagePromptInfo:
+    def update_image_prompt(self, file_path: Path) -> ImagePromptsData:
         """
-        Updating image's ImagePromptInfo instance
+        Updating image's prompts(ImagePromptsData)
         """
-        image_prompt = ImagePromptInfo(file_path)
-        self._prompt_cache[file_path] = image_prompt
-        return image_prompt
+        prompts = ImagePromptInfo(file_path).prompts
+        self._prompt_cache[file_path] = prompts
+        return prompts
 
     @Slot()
     def show_image_use_preview(self, event=None) -> None:
@@ -323,13 +333,13 @@ class MainWindow(QMainWindow):
         To open an image using the default program in Mac.
         :param event: accept mousePressEvent event
         """
-        if not self.current_image_file_Path.exists():
+        if not self.current_image_file.exists():
             self.handle_image_or_folder_deletion()
             return
 
         try:
             if not event or (event.button() == Qt.LeftButton and event.type() == QEvent.MouseButtonDblClick):
-                subprocess.run(self.default_app_text_command + [str(self.current_image_file_Path)], check=True)
+                subprocess.run(self.default_app_text_command + [str(self.current_image_file)], check=True)
         except subprocess.CalledProcessError as e:
             print('\033[33m' + f'Error: {e}, cannot call default application.' + '\033[0m')
 
@@ -369,7 +379,7 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def change_filename(self) -> None:
-        rename_window = RenameWindow(file_path=self.current_image_file_Path, parent=self)
+        rename_window = RenameWindow(file_path=self.current_image_file, parent=self)
         rename_window.Rename_Signal.connect(self.file_rename)
         rename_window.setWindowModality(Qt.ApplicationModal)
         rename_window.show()
@@ -380,12 +390,12 @@ class MainWindow(QMainWindow):
         Save the file to the specified folder
         :return: None
         """
-        saveto_folder_path: str = self.saveto_folder_path or str(self.current_open_folder_Path)
+        saveto_folder_path: str = self.saveto_folder_path or str(self.current_open_folder)
         new_folder_path: str = QFileDialog.getExistingDirectory(self, "Open Folder", saveto_folder_path)
-        if new_folder_path and new_folder_path != self.current_open_folder_Path:
-            new_file_path = f'{new_folder_path}/{self.current_image_file_Path.name}'
+        if new_folder_path and new_folder_path != self.current_open_folder:
+            new_file_path = f'{new_folder_path}/{self.current_image_file.name}'
             if not Path(new_file_path).exists():
-                shutil.copy(self.current_image_file_Path, new_folder_path)
+                shutil.copy(self.current_image_file, new_folder_path)
                 self.saveto_folder_path = new_folder_path
             else:
                 QMessageBox.warning(
@@ -402,26 +412,26 @@ class MainWindow(QMainWindow):
         :param new_file_path: The new path emitted by the rename signal
         :return: None
         """
-        self.current_image_file_Path.rename(new_file_path)
+        self.current_image_file.rename(new_file_path)
         self.ui.filename_text_browser.setText(new_file_path.name)
 
         # update self._prompt_cache
-        self._prompt_cache[new_file_path] = self._prompt_cache.pop(self.current_image_file_Path)
+        self._prompt_cache[new_file_path] = self._prompt_cache.pop(self.current_image_file)
         # update self._gallery_image_label
-        image_label_data: list = self._gallery_image_label.pop(self.current_image_file_Path.name)
-        label = image_label_data[0]
+        image_label: ImageLabelData = self._gallery_image_label.pop(self.current_image_file)
+        label = image_label.label
         label.mousePressEvent = lambda event, path=new_file_path: self.open_and_show_image(path)
-        index = image_label_data[2]
-        self._gallery_image_label[new_file_path.name] = [label, new_file_path, index]
+        index = image_label.index
+        self._gallery_image_label[new_file_path] = ImageLabelData(label=label, path=new_file_path, index=index)
         # update self._gallery_image_file_path_list
-        list_index = self._gallery_image_file_path_list.index(self.current_image_file_Path)
+        list_index = self._gallery_image_file_path_list.index(self.current_image_file)
         self._gallery_image_file_path_list[list_index] = new_file_path
 
     def gallery(self, open_folder_path: Path, is_refresh=False) -> None:
         """
         To display the content of the gallery layout, including UI processing
         But in any case, it will try to clear the content of self.scrollAreaWidgetContents_layout
-        :param open_folder_path: self.current_open_folder_Path(if None)
+        :param open_folder_path: self.current_open_folder(if None)
         :param is_refresh: Set to True means called by clicking refresh button
         :return: None
         """
@@ -440,7 +450,7 @@ class MainWindow(QMainWindow):
         # When the currently viewed image or its containing folder is deleted and the user clicks the refresh button
         # directly.
         # (Since deleting the folder is equivalent to deleting the image, it is sufficient to check if the image exists)
-        if not self.current_image_file_Path.exists():
+        if not self.current_image_file.exists():
             self.handle_image_or_folder_deletion()
             return
 
@@ -457,7 +467,7 @@ class MainWindow(QMainWindow):
             label = QLabel()
             label.setPixmap(pixmap.scaledToHeight(100, Qt.SmoothTransformation))
             label.mousePressEvent = lambda event, path=image_path: self.open_and_show_image(path)
-            self._gallery_image_label[f'{image_path.name}'] = [label, image_path, index]
+            self._gallery_image_label[image_path] = ImageLabelData(label=label, path=image_path, index=index)
             self.scrollAreaWidgetContents_layout.addWidget(label, 0, index)
             self._gallery_image_file_path_list.append(image_path)
             index += 1
@@ -465,8 +475,8 @@ class MainWindow(QMainWindow):
         # Updating the self._gallery_image_index_end, self._gallery_image_index_pointer
         # and gallery_image_highlight
         self._gallery_image_index_end = len(self._gallery_image_file_path_list) - 1  # index is 0~
-        self._gallery_image_index_pointer = self._gallery_image_file_path_list.index(self.current_image_file_Path)
-        self.gallery_image_highlight(image_name=self.current_image_file_Path.name)
+        self._gallery_image_index_pointer = self._gallery_image_file_path_list.index(self.current_image_file)
+        self.gallery_image_highlight(image_path=self.current_image_file)
 
     @staticmethod
     def clear_layout_widgets(layout) -> None:
@@ -487,10 +497,10 @@ class MainWindow(QMainWindow):
             if label is not None:
                 label.deleteLater()
 
-    def gallery_image_highlight(self, image_name: str) -> None:
+    def gallery_image_highlight(self, image_path: Path) -> None:
         """
         Add a red border to the selected image and adjust the ScrollBar position accordingly
-        :param image_name:
+        :param image_path:
         :return:
         """
         self._gallery_image_label_axis_list = self.update_layout_and_get_coordinates()
@@ -498,7 +508,7 @@ class MainWindow(QMainWindow):
         if self._highlight_label_last:
             self._highlight_label_last.setStyleSheet(None)
 
-        label = self._gallery_image_label[image_name][0]
+        label = self._gallery_image_label[image_path].label
         label.setStyleSheet("border: 1px solid red;")
         self._highlight_label_last = label
 
@@ -513,7 +523,7 @@ class MainWindow(QMainWindow):
         :return:
         """
         QCoreApplication.processEvents()
-        return [label[0].pos().x() for label in self._gallery_image_label.values()]
+        return [data.label.pos().x() for data in self._gallery_image_label.values()]
         # print('\033[46m' + f'{self._gallery_image_label_axis_list= }' + '\033[0m')
 
     def enable_buttons_when_open_image_success(self) -> None:
@@ -529,8 +539,8 @@ class MainWindow(QMainWindow):
         """
         Handle the scenario where the user deletes the image currently being viewed or the folder it belongs to
         """
-        if self.current_open_folder_Path.exists():
-            files_list = sorted([file for file in self.current_open_folder_Path.glob('*')
+        if self.current_open_folder.exists():
+            files_list = sorted([file for file in self.current_open_folder.glob('*')
                                  if file.suffix.lower() in ['.png', '.jpg', '.jpeg', '.webp']])
             # If there is an image, open and show it
             for file in files_list:
@@ -542,12 +552,12 @@ class MainWindow(QMainWindow):
 
             self.renew_ui()
             self._current_folder_is_empty = True  # for force to update gallery
-            self.current_image_file_Path = Path('./fake_file_path/file.png')
+            self.current_image_file = Path('./fake_file_path/file.png')
             self.trigger_warning_dialog(situation='folder_empty')
         else:
             self.renew_ui()
-            self.current_open_folder_Path = Path('.')
-            self.current_image_file_Path = Path('./fake_file_path/file.png')
+            self.current_open_folder = Path('.')
+            self.current_image_file = Path('./fake_file_path/file.png')
             self.trigger_warning_dialog(situation='folder_deletion')
 
     def trigger_warning_dialog(self, situation: str) -> None:
@@ -583,7 +593,7 @@ class MainWindow(QMainWindow):
 
     def renew_ui(self) -> None:
         """
-        Reset the UI to its initial state, but keep self.current_open_folder_Path and self.current_image_file_Path
+        Reset the UI to its initial state, but keep self.current_open_folder and self.current_image_file
         """
         self.ui.gallery_refresh_button.setEnabled(False)
         self.ui.open_with_default_button.setEnabled(False)
