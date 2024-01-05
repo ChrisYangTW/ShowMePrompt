@@ -168,12 +168,9 @@ if __name__ == '__main__':
 
         def show_rename_window(self):
             rename_window = RenameWindow(file_path=Path('/User/username/fake.file'), parent=self)
-            rename_window.Rename_Signal.connect(self.handle_rename_signal)
+            rename_window.Rename_Signal.connect(lambda new_file_path: print(f'Renamed file: {new_file_path}'))
             rename_window.setWindowModality(Qt.ApplicationModal)
             rename_window.show()
-
-        def handle_rename_signal(self, new_file_path: Path):
-            print(f'Receive the rename signal: {new_file_path=}')
 
 
     app = QApplication([])

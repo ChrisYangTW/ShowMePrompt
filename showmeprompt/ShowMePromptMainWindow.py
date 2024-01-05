@@ -46,7 +46,7 @@ class MainWindow(QMainWindow):
 
         self.current_open_folder: Path = Path('.')
         self.current_image_file: Path = Path('./fake_file_path/fake_file.png')
-        self.saveto_folder_path = ''
+        self.saveto_folder: Path | None = None
         self.current_image_raw: str = ''
         self.current_image_raw_without_settings: str = ''
         self._prompt_cache: dict = {}
@@ -55,7 +55,7 @@ class MainWindow(QMainWindow):
         self._gallery_image_label_axis_list: list | None = None
         self._gallery_image_index_end: int = 0
         self._gallery_image_index_pointer: int = 0
-        self._highlight_label_last: QLabel | None = None
+        self._gallery_highlight_label_last: QLabel | None = None
         self._current_folder_is_empty: bool = False
 
     def setup_menu_action(self) -> None:
@@ -116,7 +116,7 @@ class MainWindow(QMainWindow):
         self.setup_copy_button()  # default
         self.ui.copy_combo_box.currentTextChanged.connect(self.copy_combox_selected)
 
-        self.ui.edit_button.clicked.connect(self.edit_prompt)
+        self.ui.edit_button.clicked.connect(self.edit_prompts)
         # Disable the edit_button as there are no image files to open initially
         self.ui.edit_button.setEnabled(False)
 
@@ -133,7 +133,7 @@ class MainWindow(QMainWindow):
             self.setMinimumSize(950, 760)
             self.setMaximumSize(16777215, 16777215)
 
-    @Slot()
+    @Slot(str)
     def copy_combox_selected(self, combox_name: str) -> None:
         """
         Set the properties of the copy_button according to the content of the combobox
@@ -155,12 +155,12 @@ class MainWindow(QMainWindow):
         self.ui.copy_button.setIcon(QApplication.style().standardIcon(QStyle.SP_FileDialogDetailedView))
         if is_full:
             self.ui.copy_button.setObjectName(u"copy_prompts_full_button")
-            self.ui.copy_button.clicked.connect(lambda: self.copy_prompt())
+            self.ui.copy_button.clicked.connect(lambda: self.copy_prompts())
         else:
             self.ui.copy_button.setObjectName(u"copy_without_settings_button")
-            self.ui.copy_button.clicked.connect(lambda: self.copy_prompt(is_full))
+            self.ui.copy_button.clicked.connect(lambda: self.copy_prompts(is_full))
 
-    def copy_prompt(self, is_full=True) -> None:
+    def copy_prompts(self, is_full=True) -> None:
         """
         Copy the complete prompts or prompts excluding settings,
         then display the message on the status bar for 1.5 seconds
@@ -177,25 +177,25 @@ class MainWindow(QMainWindow):
             self.ui.statusbar.showMessage('Copy prompts without settings', 1500)
 
     @Slot()
-    def edit_prompt(self) -> None:
+    def edit_prompts(self) -> None:
         """
         Pop up a QDialog window for modifying the prompts of the image
         :return: None
         """
         editor_window = EditRawWindow(file_path=self.current_image_file, image_raw=self.current_image_raw, parent=self)
-        editor_window.Rewrite_Image_Raw_Signal.connect(self.update_current_image_prompt_and_redisplay)
+        editor_window.Rewrite_Image_Raw_Signal.connect(self.update_current_image_prompts_and_redisplay)
         # Only after this QDialog is closed, the main window can be used again
         editor_window.setWindowModality(Qt.ApplicationModal)
         editor_window.show()
 
     @Slot()
-    def update_current_image_prompt_and_redisplay(self) -> None:
+    def update_current_image_prompts_and_redisplay(self) -> None:
         """
-        Update the current image's prompt and redisplay the new prompt
+        Update the current image's prompts and redisplay the new prompt
         :return: None
         """
         self.update_image_prompt(self.current_image_file)
-        self.show_filename_and_prompt()
+        self.show_filename_and_prompts()
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         """
@@ -277,7 +277,7 @@ class MainWindow(QMainWindow):
         self.ui.main_image_label.setPixmap(pixmap.scaled(self.ui.main_image_label.size(),
                                                          Qt.KeepAspectRatio,
                                                          Qt.SmoothTransformation))
-        self.show_filename_and_prompt()
+        self.show_filename_and_prompts()
         self.enable_buttons_when_open_image_success()
 
         # Updating self._gallery_image_index_pointer when the gallery does not need to refresh
@@ -286,7 +286,7 @@ class MainWindow(QMainWindow):
         # Updating gallery highlight
         self.gallery_image_highlight(image_path=self.current_image_file)
 
-    def show_filename_and_prompt(self) -> None:
+    def show_filename_and_prompts(self) -> None:
         """
         Reads the information of the image and displays the information in the corresponding text browser
         (filename, positive, negative, settings).
@@ -310,8 +310,8 @@ class MainWindow(QMainWindow):
         self.ui.settings_text_browser.clear()
         self.ui.settings_text_browser.append(prompts.settings)
 
-        self.current_image_raw_without_settings = prompts.raw_without_settings
         self.current_image_raw = prompts.raw
+        self.current_image_raw_without_settings = prompts.raw_without_settings
 
     def get_image_prompts(self, file_path: Path) -> ImagePromptsData:
         """
@@ -366,21 +366,25 @@ class MainWindow(QMainWindow):
         """
         if not self.ui.main_image_label.pixmap().isNull():
             menu = QMenu(self)
-            custom_action1 = QAction('Change image name', self)
-            custom_action1.triggered.connect(self.change_filename)
-            menu.addAction(custom_action1)
-            custom_action2 = QAction('Save the image to ...', self)
-            custom_action2.triggered.connect(self.save_the_image_to)
-            menu.addAction(custom_action2)
+            rename_action = QAction('Change image name', self)
+            rename_action.triggered.connect(self.show_rename_window)
+            menu.addAction(rename_action)
+            saveto_action = QAction('Save the image to ...', self)
+            saveto_action.triggered.connect(self.save_the_image_to)
+            menu.addAction(saveto_action)
 
             # Use .mapToGlobal() to translate the local coordinates of the label into global coordinates and
             # display the menu at that position
             menu.exec(self.ui.main_image_label.mapToGlobal(pos))
 
     @Slot()
-    def change_filename(self) -> None:
+    def show_rename_window(self) -> None:
+        """
+        Pop up a QDialog window for renaming the image
+        :return: None
+        """
         rename_window = RenameWindow(file_path=self.current_image_file, parent=self)
-        rename_window.Rename_Signal.connect(self.file_rename)
+        rename_window.Rename_Signal.connect(self.rename_image)
         rename_window.setWindowModality(Qt.ApplicationModal)
         rename_window.show()
 
@@ -390,42 +394,44 @@ class MainWindow(QMainWindow):
         Save the file to the specified folder
         :return: None
         """
-        saveto_folder_path: str = self.saveto_folder_path or str(self.current_open_folder)
-        new_folder_path: str = QFileDialog.getExistingDirectory(self, "Open Folder", saveto_folder_path)
-        if new_folder_path and new_folder_path != self.current_open_folder:
-            new_file_path = f'{new_folder_path}/{self.current_image_file.name}'
-            if not Path(new_file_path).exists():
-                shutil.copy(self.current_image_file, new_folder_path)
-                self.saveto_folder_path = new_folder_path
-            else:
-                QMessageBox.warning(
-                    self,
-                    'Warning',
-                    'The folder contains files with the same name',
-                    QMessageBox.Ok,
-                    QMessageBox.Ok
-                )
+        saveto_folder: Path = self.saveto_folder or self.current_open_folder
+        if new_folder := QFileDialog.getExistingDirectory(self, "Open Folder", str(saveto_folder)):
+            if new_folder != str(self.current_open_folder):
+                new_file_path = Path(new_folder) / self.current_image_file.name
+                if not new_file_path.exists():
+                    shutil.copy(self.current_image_file, new_file_path)
+                    self.saveto_folder = new_file_path
+                else:
+                    QMessageBox.warning(
+                        self,
+                        'Warning',
+                        'The folder contains files with the same name',
+                        QMessageBox.Ok,
+                        QMessageBox.Ok
+                    )
 
-    def file_rename(self, new_file_path: Path) -> None:
+    def rename_image(self, new_file_path: Path) -> None:
         """
         Change the filename and update all containers
         :param new_file_path: The new path emitted by the rename signal
         :return: None
         """
-        self.current_image_file.rename(new_file_path)
-        self.ui.filename_text_browser.setText(new_file_path.name)
-
         # update self._prompt_cache
         self._prompt_cache[new_file_path] = self._prompt_cache.pop(self.current_image_file)
+
         # update self._gallery_image_label
         image_label: ImageLabelData = self._gallery_image_label.pop(self.current_image_file)
         label = image_label.label
         label.mousePressEvent = lambda event, path=new_file_path: self.open_and_show_image(path)
         index = image_label.index
         self._gallery_image_label[new_file_path] = ImageLabelData(label=label, path=new_file_path, index=index)
+
         # update self._gallery_image_file_path_list
         list_index = self._gallery_image_file_path_list.index(self.current_image_file)
         self._gallery_image_file_path_list[list_index] = new_file_path
+
+        self.current_image_file = self.current_image_file.rename(new_file_path)
+        self.ui.filename_text_browser.setText(self.current_image_file.name)
 
     def gallery(self, open_folder_path: Path, is_refresh=False) -> None:
         """
@@ -440,12 +446,12 @@ class MainWindow(QMainWindow):
             self._prompt_cache.clear()
         # If there are widgets in the self.scrollAreaWidgetContents_layout(QGridLayout),
         # remove them first and clear self._gallery_image_label, self._gallery_image_file_path_list,
-        # self._highlight_label_last(need to recycle the useless QLabel if exist)
+        # self._gallery_highlight_label_last(need to recycle the useless QLabel if exist)
         self.clear_layout_widgets(self.scrollAreaWidgetContents_layout)
         self._gallery_image_label.clear()
         self._gallery_image_file_path_list.clear()
-        if self._highlight_label_last:
-            self._highlight_label_last = None
+        if self._gallery_highlight_label_last:
+            self._gallery_highlight_label_last = None
 
         # When the currently viewed image or its containing folder is deleted and the user clicks the refresh button
         # directly.
@@ -505,12 +511,12 @@ class MainWindow(QMainWindow):
         """
         self._gallery_image_label_axis_list = self.update_layout_and_get_coordinates()
         # Remove the last image's border
-        if self._highlight_label_last:
-            self._highlight_label_last.setStyleSheet(None)
+        if self._gallery_highlight_label_last:
+            self._gallery_highlight_label_last.setStyleSheet(None)
 
         label = self._gallery_image_label[image_path].label
         label.setStyleSheet("border: 1px solid red;")
-        self._highlight_label_last = label
+        self._gallery_highlight_label_last = label
 
         # When there are more than two images, keep at least the first two images
         index = max(self._gallery_image_index_pointer - 2, 0)
