@@ -37,6 +37,8 @@ class ImagePromptInfo:
                 self.handle_sd_png_image()
             elif 'exif' in self._info and im.format in ['JPEG', 'WEBP']:
                 self.handle_sd_jpg_or_webp_image()
+            elif 'XML:com.adobe.xmp' in self._info:
+                self.handle_sd_image_make_by_draw_things()
             elif self._info.get('Software') == 'NovelAI':
                 print('\033[4m' + 'NotImplemented: handle Nai image' + '\033[0m')
 
@@ -57,6 +59,19 @@ class ImagePromptInfo:
             print('\033[33m' + f'ValueError: {e} ({self._file_path.name})' + '\033[0m')
         else:
             self.raw_format()
+
+    def handle_sd_image_make_by_draw_things(self) -> None:
+        xmp_data: str = self._info['XML:com.adobe.xmp']
+        if '<xmp:CreatorTool>Draw Things</xmp:CreatorTool>' not in xmp_data:
+            return
+
+        prompts_info_start = xmp_data.find('<rdf:li xml:lang="x-default">')
+        prompts_info_end = xmp_data.find('</rdf:li>')
+        prompts_info = xmp_data[prompts_info_start+29:prompts_info_end]
+
+        prompts_info = prompts_info.replace(r'&#xA;-', '\nNegative prompt: ', 1).replace(r'&#xA;', '\n', 1)
+        self._raw = prompts_info
+        self.raw_format()
 
     def handle_nai_image(self) -> None:
         raise NotImplemented('Need to handle NovelAI\'s image')
@@ -126,13 +141,13 @@ if __name__ == '__main__':
         # '2(loss).png',
         # '3(encode).jpg',
         # '4(real).jpg',
-        '5.png',
-        'tt.jpeg'
+        # '5(drawthings).png',
+        # 'tt.jpeg'
     ]:
         print('<' * 10, path, '>' * 10)
         path = Path(f'../example/images/{path}')
         img_prompts = ImagePromptInfo(path).prompts
         print(img_prompts.raw)
-        print(img_prompts.positive)
-        print(img_prompts.negative)
+        # print(img_prompts.positive)
+        # print(img_prompts.negative)
         print('_' * 80)
