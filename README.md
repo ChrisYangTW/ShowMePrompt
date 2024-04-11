@@ -41,3 +41,8 @@ python3 main.py
 ```
 Python 3.12 (on macOS 14.2.1)
 ```
+
+## Note
+If crash after update PySide6 >= 6.6.2  
+Just remove and reinstall it. (Have to remove all PySide6 packages)
+>pip uninstall -qy shiboken6 PySide6 PySide6_Addons PySide6_Essentials
