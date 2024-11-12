@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'showmeprompt_main.ui'
+## Form generated from reading UI file 'showmeprompt_UI_dev.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.5.1
+## Created by: Qt User Interface Compiler version 6.8.0
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -44,7 +44,7 @@ class Ui_MainWindow(object):
         self.open_horizontalLayout.setObjectName(u"open_horizontalLayout")
         self.open_file_button = QPushButton(self.centralwidget)
         self.open_file_button.setObjectName(u"open_file_button")
-        sizePolicy = QSizePolicy(QSizePolicy.Ignored, QSizePolicy.Expanding)
+        sizePolicy = QSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.open_file_button.sizePolicy().hasHeightForWidth())
@@ -66,9 +66,11 @@ class Ui_MainWindow(object):
 
         self.left_verticalLayout.addLayout(self.open_horizontalLayout)
 
+        self.show_info_horizontalLayout = QHBoxLayout()
+        self.show_info_horizontalLayout.setObjectName(u"show_info_horizontalLayout")
         self.filename_text_browser = QTextBrowser(self.centralwidget)
         self.filename_text_browser.setObjectName(u"filename_text_browser")
-        sizePolicy1 = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Ignored)
+        sizePolicy1 = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Ignored)
         sizePolicy1.setHorizontalStretch(0)
         sizePolicy1.setVerticalStretch(0)
         sizePolicy1.setHeightForWidth(self.filename_text_browser.sizePolicy().hasHeightForWidth())
@@ -78,7 +80,20 @@ class Ui_MainWindow(object):
         self.filename_text_browser.setFont(font1)
         self.filename_text_browser.setStyleSheet(u"")
 
-        self.left_verticalLayout.addWidget(self.filename_text_browser)
+        self.show_info_horizontalLayout.addWidget(self.filename_text_browser)
+
+        self.model_name_text_browser = QTextBrowser(self.centralwidget)
+        self.model_name_text_browser.setObjectName(u"model_name_text_browser")
+        sizePolicy1.setHeightForWidth(self.model_name_text_browser.sizePolicy().hasHeightForWidth())
+        self.model_name_text_browser.setSizePolicy(sizePolicy1)
+        self.model_name_text_browser.setFont(font1)
+
+        self.show_info_horizontalLayout.addWidget(self.model_name_text_browser)
+
+        self.show_info_horizontalLayout.setStretch(0, 3)
+        self.show_info_horizontalLayout.setStretch(1, 2)
+
+        self.left_verticalLayout.addLayout(self.show_info_horizontalLayout)
 
         self.main_image_label = QLabel(self.centralwidget)
         self.main_image_label.setObjectName(u"main_image_label")
@@ -88,7 +103,7 @@ class Ui_MainWindow(object):
         font2.setPointSize(22)
         self.main_image_label.setFont(font2)
         self.main_image_label.setAcceptDrops(True)
-        self.main_image_label.setAlignment(Qt.AlignCenter)
+        self.main_image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.left_verticalLayout.addWidget(self.main_image_label)
 
@@ -107,7 +122,7 @@ class Ui_MainWindow(object):
 
         self.gallery_refresh_button = QPushButton(self.centralwidget)
         self.gallery_refresh_button.setObjectName(u"gallery_refresh_button")
-        sizePolicy2 = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        sizePolicy2 = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         sizePolicy2.setHorizontalStretch(0)
         sizePolicy2.setVerticalStretch(0)
         sizePolicy2.setHeightForWidth(self.gallery_refresh_button.sizePolicy().hasHeightForWidth())
@@ -188,7 +203,7 @@ class Ui_MainWindow(object):
         self.copy_combo_box.addItem("")
         self.copy_combo_box.addItem("")
         self.copy_combo_box.setObjectName(u"copy_combo_box")
-        sizePolicy3 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
+        sizePolicy3 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
         sizePolicy3.setHorizontalStretch(0)
         sizePolicy3.setVerticalStretch(0)
         sizePolicy3.setHeightForWidth(self.copy_combo_box.sizePolicy().hasHeightForWidth())
@@ -205,7 +220,7 @@ class Ui_MainWindow(object):
 
         self.copy_horizontalLayout.addWidget(self.copy_button)
 
-        self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+        self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
         self.copy_horizontalLayout.addItem(self.horizontalSpacer)
 

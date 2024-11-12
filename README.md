@@ -19,7 +19,7 @@ python3 main.py
 ```
 
 ## Usage
-![usage](examples/usage_v0_1_4.png)
+![usage](examples/usage_v0_1_4a.png)
 * Open an image
   * Method 1: Click the 'Open' button in the top left to choose an image.
   * Method 2: Using drag-and-drop.
@@ -39,7 +39,7 @@ python3 main.py
 
 ## Test environment
 ```
-Python 3.12 (on macOS 14.2.1)
+Python 3.12 (on macOS 15.1)
 ```
 
 ## Note

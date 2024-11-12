@@ -8,7 +8,9 @@ from piexif import helper
 
 
 @dataclass(slots=True)
-class ImagePromptsData:
+class ImageInfoData:
+    filename: str = ''
+    modelname: str = ''
     positive: str = ''
     negative: str = ''
     settings: str = ''
@@ -16,7 +18,7 @@ class ImagePromptsData:
     raw_without_settings: str = ''
 
 
-class ImagePromptInfo:
+class ImageInfo:
     """
     Get the prompt information of an image
     """
@@ -102,6 +104,13 @@ class ImagePromptInfo:
         return self._file_path.name
 
     @property
+    def modelname(self) -> str:
+        match = re.search(r'model:\s*([^,]+)', self._settings, re.IGNORECASE)
+        if match:
+            return match.group(1).strip()
+        return ''
+
+    @property
     def positive(self) -> str | None:
         if not self._positive and not self._negative and not self._settings:
             return None
@@ -124,15 +133,17 @@ class ImagePromptInfo:
         return self._raw_without_settings
 
     @property
-    def prompts(self) -> ImagePromptsData:
+    def info(self) -> ImageInfoData:
         if not self._positive and not self._negative and not self._settings:
-            return ImagePromptsData()
-        return ImagePromptsData(positive=self._positive,
-                                negative=self._negative,
-                                settings=self._settings,
-                                raw=self._raw,
-                                raw_without_settings=self._raw_without_settings
-                                )
+            return ImageInfoData()
+        return ImageInfoData(filename=self.filename,
+                             modelname=self.modelname,
+                             positive=self.positive,
+                             negative=self.negative,
+                             settings=self.settings,
+                             raw=self.raw,
+                             raw_without_settings=self.raw_without_settings
+                             )
 
 
 if __name__ == '__main__':
@@ -146,8 +157,8 @@ if __name__ == '__main__':
     ]:
         print('<' * 10, path, '>' * 10)
         path = Path(f'../example/images/{path}')
-        img_prompts = ImagePromptInfo(path).prompts
-        print(img_prompts.raw)
-        # print(img_prompts.positive)
-        # print(img_prompts.negative)
+        info = ImageInfo(path).info
+        print(info.filename)
+        print(info.modelname)
+        print(info.negative)
         print('_' * 80)

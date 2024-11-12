@@ -9,7 +9,7 @@ from PySide6.QtGui import QPixmap, QDragEnterEvent, QDropEvent, QGuiApplication,
 from PySide6.QtCore import Qt, Slot, QCoreApplication, QSize, QEvent
 
 from showmeprompt.showmeprompt_UI import Ui_MainWindow
-from showmeprompt.GetImageExif import ImagePromptInfo, ImagePromptsData
+from showmeprompt.GetImageExif import ImageInfo, ImageInfoData
 from showmeprompt.DialogWindow import EditRawWindow, RenameWindow
 
 from showmeprompt.LoggerConf import get_logger
@@ -49,7 +49,7 @@ class MainWindow(QMainWindow):
         self.saveto_folder: Path | None = None
         self.current_image_raw: str = ''
         self.current_image_raw_without_settings: str = ''
-        self._prompt_cache: dict = {}
+        self._info_cache: dict = {}
         self._gallery_image_label: dict = {}
         self._gallery_image_file_path_list: list = []
         self._gallery_image_label_axis_list: list | None = None
@@ -194,7 +194,7 @@ class MainWindow(QMainWindow):
         Update the current image's prompts and redisplay the new prompt
         :return: None
         """
-        self.update_image_prompt(self.current_image_file)
+        self.update_image_info(self.current_image_file)
         self.show_filename_and_prompts()
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
@@ -271,7 +271,7 @@ class MainWindow(QMainWindow):
             self.gallery(file_folder_path)
             self.current_open_folder = file_folder_path
             self._current_folder_is_empty = False
-            self._prompt_cache.clear()
+            self._info_cache.clear()
 
         # To display the image, including showing its prompts
         self.ui.main_image_label.setPixmap(pixmap.scaled(self.ui.main_image_label.size(),
@@ -289,43 +289,46 @@ class MainWindow(QMainWindow):
     def show_filename_and_prompts(self) -> None:
         """
         Reads the information of the image and displays the information in the corresponding text browser
-        (filename, positive, negative, settings).
+        (file name, model name, positive, negative, settings).
         The raw data is also saved for copying purposes.
         """
-        prompts = self.get_image_prompts(self.current_image_file)
+        info = self.get_image_info(self.current_image_file)
         self.ui.filename_text_browser.clear()
-        self.ui.filename_text_browser.append(self.current_image_file.name)
+        self.ui.filename_text_browser.append(info.filename)
+
+        self.ui.model_name_text_browser.clear()
+        self.ui.model_name_text_browser.append(info.modelname)
 
         self.ui.positive_text_browser.clear()
-        if prompts.positive:
-            self.ui.positive_text_browser.append(prompts.positive)
+        if info.positive:
+            self.ui.positive_text_browser.append(info.positive)
         else:
             self.ui.positive_text_browser.insertHtml(
                 "<span style='color: red;'>No Prompt information or parsing failed</span>")
             self.ui.positive_text_browser.setCurrentCharFormat(QTextCharFormat())
 
         self.ui.negative_text_browser.clear()
-        self.ui.negative_text_browser.append(prompts.negative)
+        self.ui.negative_text_browser.append(info.negative)
 
         self.ui.settings_text_browser.clear()
-        self.ui.settings_text_browser.append(prompts.settings)
+        self.ui.settings_text_browser.append(info.settings)
 
-        self.current_image_raw = prompts.raw
-        self.current_image_raw_without_settings = prompts.raw_without_settings
+        self.current_image_raw = info.raw
+        self.current_image_raw_without_settings = info.raw_without_settings
 
-    def get_image_prompts(self, file_path: Path) -> ImagePromptsData:
+    def get_image_info(self, file_path: Path) -> ImageInfoData:
         """
         Get image's prompts(ImagePromptInfo instance)
         """
-        return self._prompt_cache.get(file_path) or self.update_image_prompt(file_path)
+        return self._info_cache.get(file_path) or self.update_image_info(file_path)
 
-    def update_image_prompt(self, file_path: Path) -> ImagePromptsData:
+    def update_image_info(self, file_path: Path) -> ImageInfoData:
         """
-        Updating image's prompts(ImagePromptsData)
+        Updating image's prompts(ImageInfoData)
         """
-        prompts = ImagePromptInfo(file_path).prompts
-        self._prompt_cache[file_path] = prompts
-        return prompts
+        info = ImageInfo(file_path).info
+        self._info_cache[file_path] = info
+        return info
 
     @Slot()
     def show_image_use_preview(self, event=None) -> None:
@@ -417,7 +420,7 @@ class MainWindow(QMainWindow):
         :return: None
         """
         # update self._prompt_cache
-        self._prompt_cache[new_file_path] = self._prompt_cache.pop(self.current_image_file)
+        self._info_cache[new_file_path] = self._info_cache.pop(self.current_image_file)
 
         # update self._gallery_image_label
         image_label: ImageLabelData = self._gallery_image_label.pop(self.current_image_file)
@@ -443,7 +446,7 @@ class MainWindow(QMainWindow):
         """
         logger.debug('Refresh Gallery ')
         if is_refresh:
-            self._prompt_cache.clear()
+            self._info_cache.clear()
         # If there are widgets in the self.scrollAreaWidgetContents_layout(QGridLayout),
         # remove them first and clear self._gallery_image_label, self._gallery_image_file_path_list,
         # self._gallery_highlight_label_last(need to recycle the useless QLabel if exist)
